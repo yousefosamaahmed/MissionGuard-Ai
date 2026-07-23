@@ -8,6 +8,10 @@ MissionGuard AI is an explainable spacecraft-telemetry decision-support applicat
 
 ---
 
+## Challenge UI/UX
+
+The application now opens on a cinematic **Launchpad** that introduces MissionGuard AI before the user enters mission control. Every major capability has its own numbered workspace, and the new **Team & Contact** page presents the builders and their roles professionally. The interface remains responsive and supports both Dark and Light appearance modes.
+
 ## Dataset
 
 **OPSSAT-AD v2** contains telemetry acquired aboard OPS-SAT, a CubeSat mission operated by the European Space Agency.
@@ -212,11 +216,41 @@ len_weighted,var_div_duration,var_div_len
 
 ## Quick Start
 
+### Docker + PostgreSQL + pgAdmin (recommended for a server)
+
+For the packaged local Windows build, `.env` is already included. Start it with:
+
+```text
+START_DOCKER_WINDOWS.bat
+```
+
+For a server deployment, create a secure environment file first:
+
+```bash
+cp .env.server.example .env
+# Edit .env and replace every CHANGE_ME value.
+docker compose up -d --build --force-recreate
+```
+
+The stack starts the Streamlit app, PostgreSQL, and pgAdmin. The application
+creates the `missionguard` schema, verifies all required tables, and seeds the
+official OPS-SAT reference dataset and model registry without duplicating them
+on later restarts. See `DEPLOYMENT_PGADMIN_AR.md` for the complete Arabic guide.
+
+Default local endpoints:
+
+- MissionGuard: `http://localhost:8501`
+- pgAdmin: `http://localhost:5050`
+
 ### Windows
 
-```powershell
-RUN_WINDOWS.bat
+Full Docker stack with PostgreSQL and pgAdmin:
+
+```text
+START_DOCKER_WINDOWS.bat
 ```
+
+`RUN_WINDOWS.bat` is only for local Streamlit mode and does not start pgAdmin.
 
 ### Manual setup
 
@@ -283,3 +317,27 @@ pytest
 This project uses OPSSAT-AD under the Creative Commons Attribution 4.0 International license:
 
 Bogdan Ruszczak, Krzysztof Kotowski, Jakub Nalepa, and David Evans, **OPSSAT-AD — anomaly detection dataset for satellite telemetry**, Zenodo, DOI: `10.5281/zenodo.15108715`.
+
+---
+
+## PostgreSQL connection modes
+
+MissionGuard accepts either a managed PostgreSQL connection string or separate
+connection settings. `DATABASE_URL` takes priority when both are present.
+
+```env
+DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
+POSTGRES_SCHEMA=missionguard
+```
+
+For local PostgreSQL or Docker Compose, use `POSTGRES_USER`,
+`POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`, and `POSTGRES_DB`. Server
+environment variables take priority over values stored in a local `.env` file.
+
+Useful database commands:
+
+```bash
+python scripts/bootstrap_database.py
+python scripts/initialize_database.py
+python scripts/test_database.py
+```

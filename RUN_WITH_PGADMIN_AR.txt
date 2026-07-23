@@ -1,0 +1,43 @@
+MissionGuard + PostgreSQL + pgAdmin — تشغيل مباشر على Windows
+
+أول تشغيل:
+1) فكّي ضغط الملف في مجلد عادي، ولا تشغليه من داخل ZIP.
+2) افتحي Docker Desktop وانتظري حتى تظهر Engine running.
+3) شغّلي START_DOCKER_WINDOWS.bat.
+4) السكربت سيبني المشروع ويشغّل الموقع وPostgreSQL وpgAdmin معًا، ثم يفتح الرابطين تلقائيًا.
+
+الروابط الافتراضية:
+- MissionGuard: http://localhost:8501
+- pgAdmin: http://localhost:5050
+- PostgreSQL من Windows: 127.0.0.1:55432
+إذا كان أي منفذ مستخدمًا، افتحي LOCAL_LINKS.txt لمعرفة الرابط الذي اختاره السكربت.
+
+بيانات pgAdmin المحلية:
+- Email: admin@missionguard.com
+- Password: MissionGuardAdmin2026_Local
+
+فتح قاعدة البيانات داخل pgAdmin:
+1) افتحي Servers > MissionGuard PostgreSQL.
+2) إذا طلب Database Password اكتبي: MissionGuardDB2026_Local
+3) فعّلي Save password.
+4) الجداول موجودة في:
+   Databases > missionguard_ai > Schemas > missionguard > Tables
+
+بعد أي تعديل في شكل الموقع أو الكود:
+- شغّلي START_DOCKER_WINDOWS.bat مرة أخرى.
+- سيُعاد بناء التطبيق مع الاحتفاظ ببيانات PostgreSQL القديمة.
+
+إيقاف المشروع بدون حذف البيانات:
+- شغّلي STOP_DOCKER_WINDOWS.bat
+- أو اكتبي: docker compose down
+
+مهم جدًا بخصوص Docker القديم:
+- لا تمسحي Docker Desktop ولا كل الـ containers أو volumes.
+- START_DOCKER_WINDOWS.bat يحذف ويعيد إنشاء containers الخاصة بالمشروع فقط، لكنه يحتفظ بقاعدة البيانات.
+- إذا كانت قاعدة البيانات القديمة مهمة، استخدمي نفس ملف .env القديم أو نفس POSTGRES_PASSWORD.
+- إذا ظهرت مشكلة Login في pgAdmin فقط، شغّلي RESET_PGADMIN_ONLY_WINDOWS.bat؛ قاعدة PostgreSQL لن تُحذف.
+- إذا لا تحتاجين أي بيانات قديمة وتريدين قاعدة جديدة تمامًا، شغّلي RESET_MISSIONGUARD_DATA_WINDOWS.bat ثم شغّلي START_DOCKER_WINDOWS.bat.
+
+تنبيه:
+- ملف .env يحتوي كلمات مرور محلية جاهزة للتشغيل. لا ترفعيه إلى GitHub.
+- غيّري كلمات المرور قبل نشر المشروع على سيرفر أو إتاحته عبر الإنترنت.

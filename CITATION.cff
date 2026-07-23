@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: MissionGuard AI
+message: Cite this software and the upstream OPSSAT-AD dataset when using the project.
+type: software
+authors:
+  - family-names: MissionGuard AI Team
+version: 3.0.0-opssat
+date-released: 2026-07-18
+license: MIT
+repository-code: https://github.com/ShireenAhmed3/MissionGuard-AI
+references:
+  - type: dataset
+    title: OPSSAT-AD — anomaly detection dataset for satellite telemetry
+    doi: 10.5281/zenodo.15108715
