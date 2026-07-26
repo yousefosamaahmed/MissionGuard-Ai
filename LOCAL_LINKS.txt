@@ -1,0 +1,5 @@
+﻿MissionGuard=http://localhost:8501
+pgAdmin=http://localhost:5050
+PostgreSQL=127.0.0.1:55432
+pgAdmin internal database host=postgres
+pgAdmin internal database port=5432

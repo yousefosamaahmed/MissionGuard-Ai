@@ -1,0 +1,19 @@
+النسخة جاهزة للتشغيل المباشر عبر Docker.
+
+شغّلي:
+START_DOCKER_WINDOWS.bat
+
+سيتم تشغيل:
+- MissionGuard website
+- PostgreSQL database
+- pgAdmin
+
+بيانات pgAdmin:
+admin@missionguard.com
+MissionGuardAdmin2026_Local
+
+كلمة مرور PostgreSQL داخل pgAdmin:
+MissionGuardDB2026_Local
+
+لا تحذفي بيانات Docker القديمة إلا إذا كنتِ لا تحتاجينها.
+راجعي RUN_WITH_PGADMIN_AR.txt للتفاصيل.

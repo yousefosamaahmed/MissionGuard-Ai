@@ -1,0 +1,30 @@
+MissionGuard AI - Windows Docker Port Fix
+
+============================================
+
+The PostgreSQL port deployed on Windows has been changed from 5432 to 55432. Within Docker, the correct connection remains: postgres:5432
+
+Instructions:
+
+1) Open Docker Desktop and wait for the Docker Engine to start.
+
+2) Run START_DOCKER_WINDOWS.bat from within the project folder.
+
+3) Wait for the service status to appear; the browser will open automatically.
+
+Links:
+- MissionGuard: http://localhost:8501
+
+- pgAdmin: http://localhost:5050
+
+The pgAdmin login credentials are located in the .env file:
+- PGADMIN_DEFAULT_EMAIL
+- PGADMIN_DEFAULT_PASSWORD
+
+Within pgAdmin, open the saved MissionGuard PostgreSQL server. When requesting the server password, use POSTGRES_PASSWORD from the .env file.
+
+Important: - Do not change POSTGRES_PORT=5432.
+
+- The only external Windows port is POSTGRES_EXPOSE_PORT=55432.
+
+- Do not use docker compose down -v unless you want to permanently delete the database data.

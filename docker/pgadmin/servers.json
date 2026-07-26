@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "MissionGuard PostgreSQL",
+      "Group": "MissionGuard",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "missionguard_ai",
+      "Username": "missionguard",
+      "SSLMode": "prefer"
+    }
+  }
+}

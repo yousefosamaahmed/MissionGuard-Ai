@@ -1,0 +1,28 @@
+# Python caches and environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.basedpyright/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local secrets
+.env
+!.env.example
+!.env.local.example
+.streamlit/secrets.toml
+
+# Runtime-generated files
+data/opssat/uploads/*
+!data/opssat/uploads/.gitkeep
+*.log
+*.bak
+*_backup*.py
+models/*.tmp
+
+# Operating-system files
+.DS_Store
+Thumbs.db

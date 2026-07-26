@@ -1,0 +1,113 @@
+﻿MissionGuard Docker startup - 2026-07-26 17:20:45
+============================================================
+ MissionGuard AI - Safe Docker startup
+============================================================
+[1/5] Recreating MissionGuard containers while preserving PostgreSQL data...
+ Container missionguard-pgadmin-1 Stopping 
+ Container missionguard-app-1 Stopping 
+ Container missionguard-app-1 Stopped 
+ Container missionguard-app-1 Removing 
+ Container missionguard-app-1 Removed 
+ Container missionguard-pgadmin-1 Stopped 
+ Container missionguard-pgadmin-1 Removing 
+ Container missionguard-pgadmin-1 Removed 
+ Container missionguard-postgres-1 Stopping 
+ Container missionguard-postgres-1 Stopped 
+ Container missionguard-postgres-1 Removing 
+ Container missionguard-postgres-1 Removed 
+ Network missionguard_default Removing 
+ Network missionguard_default Removed 
+[2/5] Selected available Windows ports:
+      MissionGuard: 8501
+      pgAdmin:      5050
+      PostgreSQL:   55432
+[3/5] Building and starting PostgreSQL, pgAdmin, and MissionGuard...
+#1 [internal] load local bake definitions
+#1 reading from stdin 535B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 884B 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 ...
+
+#4 [auth] library/python:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim
+#3 DONE 4.0s
+
+#5 [internal] load .dockerignore
+#5 transferring context: 227B 0.0s done
+#5 DONE 0.0s
+
+#6 [1/6] FROM docker.io/library/python:3.11-slim@sha256:db3ff2e1800a8581e2c48a27c3995339d47bdf046da21c7627accd3d51053a93
+#6 resolve docker.io/library/python:3.11-slim@sha256:db3ff2e1800a8581e2c48a27c3995339d47bdf046da21c7627accd3d51053a93 0.0s done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 8.18kB 0.0s done
+#7 DONE 0.0s
+
+#8 [2/6] WORKDIR /app
+#8 CACHED
+
+#9 [3/6] COPY requirements.txt .
+#9 CACHED
+
+#10 [4/6] RUN python -m pip install --upgrade pip     && python -m pip install --upgrade -r requirements.txt     && python -c "from typing_extensions import TypeVar; import psycopg"
+#10 CACHED
+
+#11 [5/6] COPY . .
+#11 DONE 0.2s
+
+#12 [6/6] RUN test -f models/opssat_model.joblib || python scripts/train_opssat.py     && chmod +x docker/entrypoint.sh     && mkdir -p data/opssat/uploads     && useradd --create-home --uid 10001 missionguard     && chown -R missionguard:missionguard /app
+#12 DONE 0.9s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 1.8s done
+#13 exporting manifest sha256:0d5717911bb954aa1a4ad0dd23027552f15ff3c8a2d1b6f605830f0a5dbb30a8 0.0s done
+#13 exporting config sha256:c2685f841339be559bcde8ba7ce92eef3a73476b7091517ce21251695665ce50 0.0s done
+#13 exporting attestation manifest sha256:9d2731f7beda268b41a8294bc5ebd2c46db3d1840694ef5e45f312e29843dcb6 0.1s done
+#13 exporting manifest list sha256:17798c42896049417058f7059ce1177f25f6da64426fc1855da25ab57f14d415
+#13 exporting manifest list sha256:17798c42896049417058f7059ce1177f25f6da64426fc1855da25ab57f14d415 0.0s done
+#13 naming to docker.io/library/missionguard-app:latest done
+#13 unpacking to docker.io/library/missionguard-app:latest
+#13 unpacking to docker.io/library/missionguard-app:latest 0.7s done
+#13 DONE 2.7s
+
+#14 resolving provenance for metadata file
+#14 DONE 0.0s
+ Image missionguard-app Building 
+ Image missionguard-app Built 
+ Network missionguard_default Creating 
+ Network missionguard_default Created 
+ Container missionguard-postgres-1 Creating 
+ Container missionguard-postgres-1 Created 
+ Container missionguard-pgadmin-1 Creating 
+ Container missionguard-app-1 Creating 
+ Container missionguard-app-1 Created 
+ Container missionguard-pgadmin-1 Created 
+ Container missionguard-postgres-1 Starting 
+ Container missionguard-postgres-1 Started 
+ Container missionguard-postgres-1 Waiting 
+ Container missionguard-postgres-1 Waiting 
+ Container missionguard-postgres-1 Healthy 
+ Container missionguard-app-1 Starting 
+ Container missionguard-postgres-1 Healthy 
+ Container missionguard-pgadmin-1 Starting 
+ Container missionguard-app-1 Started 
+ Container missionguard-pgadmin-1 Started 
+[4/5] Checking container status...
+NAME                      IMAGE                COMMAND                  SERVICE    CREATED         STATUS                            PORTS
+missionguard-app-1        missionguard-app     "./docker/entrypointâ€¦"   app        9 seconds ago   Up 2 seconds (health: starting)   127.0.0.1:8501->8501/tcp
+missionguard-pgadmin-1    dpage/pgadmin4:9     "/entrypoint.sh"         pgadmin    9 seconds ago   Up 2 seconds                      127.0.0.1:5050->80/tcp
+missionguard-postgres-1   postgres:16-alpine   "docker-entrypoint.sâ€¦"   postgres   9 seconds ago   Up 8 seconds (healthy)            127.0.0.1:55432->5432/tcp
+Waiting for MissionGuard at http://127.0.0.1:8501/_stcore/health ...
+MissionGuard is ready.
+Waiting for pgAdmin at http://127.0.0.1:5050/misc/ping ...
+pgAdmin is ready.
+[5/5] All services are ready.
