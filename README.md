@@ -8,6 +8,18 @@ MissionGuard AI is an explainable spacecraft-telemetry decision-support applicat
 
 ---
 
+## Live Demo
+
+MissionGuard AI is currently deployed and available at:
+
+[https://missionguardplatform.duckdns.org](https://missionguardplatform.duckdns.org)
+
+The public deployment runs on AWS Lightsail using Docker Compose, PostgreSQL, pgAdmin, Nginx, and HTTPS.
+
+The Streamlit application, PostgreSQL, and pgAdmin ports are bound to localhost and are not exposed directly to the public internet.
+
+---
+
 ## Challenge UI/UX
 
 The application now opens on a cinematic **Launchpad** that introduces MissionGuard AI before the user enters mission control. Every major capability has its own numbered workspace, and the new **Team & Contact** page presents the builders and their roles professionally. The interface remains responsive and supports both Dark and Light appearance modes.
@@ -216,26 +228,33 @@ len_weighted,var_div_duration,var_div_len
 
 ## Quick Start
 
-### Docker + PostgreSQL + pgAdmin (recommended for a server)
+### Docker + PostgreSQL + pgAdmin
 
-For the packaged local Windows build, `.env` is already included. Start it with:
+For local Windows deployment, create the environment file from the provided template:
 
-```text
-START_DOCKER_WINDOWS.bat
+```powershell
+copy .env.local.example .env
 ```
 
-For a server deployment, create a secure environment file first:
+For a Linux server deployment:
 
 ```bash
 cp .env.server.example .env
-# Edit .env and replace every CHANGE_ME value.
-docker compose up -d --build --force-recreate
 ```
 
-The stack starts the Streamlit app, PostgreSQL, and pgAdmin. The application
-creates the `missionguard` schema, verifies all required tables, and seeds the
-official OPS-SAT reference dataset and model registry without duplicating them
-on later restarts. See `DEPLOYMENT_PGADMIN_AR.md` for the complete Arabic guide.
+Open `.env` and replace every `CHANGE_ME` value with secure values before starting the stack.
+
+Then run:
+
+```bash
+docker compose up -d --build
+```
+
+The stack starts the Streamlit app, PostgreSQL, and pgAdmin.
+
+The application creates the `missionguard` schema, verifies all required tables, and seeds the official OPS-SAT reference dataset and model registry without duplicating them on later restarts.
+
+See `DEPLOYMENT_PGADMIN_AR.md` for the complete Arabic deployment guide.
 
 Default local endpoints:
 
@@ -301,6 +320,164 @@ pytest
 
 ---
 
+## Production Deployment
+
+The current public deployment uses:
+
+```text
+AWS Lightsail
+Docker Compose
+PostgreSQL
+pgAdmin
+Nginx
+Let's Encrypt
+DuckDNS
+```
+
+Public URL:
+
+```text
+https://missionguardplatform.duckdns.org
+```
+
+The production services are bound as follows:
+
+```text
+MissionGuard: 127.0.0.1:8501
+PostgreSQL:   127.0.0.1:55432
+pgAdmin:      127.0.0.1:5050
+```
+
+Only Nginx is publicly accessible through:
+
+```text
+TCP 80
+TCP 443
+```
+
+PostgreSQL, pgAdmin, and Streamlit are not exposed directly to the internet.
+
+### Production commands
+
+Check container status:
+
+```bash
+cd /home/ubuntu/missionguard-production
+docker compose ps
+```
+
+View recent logs:
+
+```bash
+docker compose logs --tail=100
+```
+
+Restart the stack:
+
+```bash
+docker compose restart
+```
+
+Rebuild after uploading code changes:
+
+```bash
+docker compose up -d --build
+```
+
+Check Nginx:
+
+```bash
+sudo systemctl is-active nginx
+sudo systemctl is-enabled nginx
+```
+
+Test HTTPS certificate renewal:
+
+```bash
+sudo certbot renew --dry-run
+```
+
+---
+
+## Updating the Deployment
+
+GitHub and the AWS deployment are currently separate.
+
+Pushing code to GitHub does not automatically update the running AWS server.
+
+To publish a new version:
+
+1. Commit and push the local changes to GitHub.
+
+```bash
+git add .
+git commit -m "Describe the update"
+git push
+```
+
+2. Upload the modified files to:
+
+```text
+/home/ubuntu/missionguard-production
+```
+
+3. Rebuild the application on the server:
+
+```bash
+cd /home/ubuntu/missionguard-production
+docker compose up -d --build
+```
+
+4. Verify the services:
+
+```bash
+docker compose ps
+```
+
+---
+
+## Security Notes
+
+Never commit or publicly share:
+
+```text
+.env
+*.pem
+*.ppk
+*.key
+missionguard-credentials.txt
+.streamlit/secrets.toml
+```
+
+Recommended public firewall ports:
+
+```text
+22   SSH
+80   HTTP
+443  HTTPS
+```
+
+Do not expose these ports publicly:
+
+```text
+8501
+5050
+5432
+55432
+```
+
+The `.env` file must remain local to the development machine or production server.
+
+Only example files such as the following should be committed:
+
+```text
+.env.example
+.env.local.example
+.env.server.example
+```
+
+---
+
 ## Responsible-AI Limitations
 
 - The model predicts **segment-level statistical anomalies**, not confirmed hardware root causes.
@@ -320,19 +497,27 @@ Bogdan Ruszczak, Krzysztof Kotowski, Jakub Nalepa, and David Evans, **OPSSAT-AD 
 
 ---
 
-## PostgreSQL connection modes
+## PostgreSQL Connection Modes
 
-MissionGuard accepts either a managed PostgreSQL connection string or separate
-connection settings. `DATABASE_URL` takes priority when both are present.
+MissionGuard accepts either a managed PostgreSQL connection string or separate connection settings. `DATABASE_URL` takes priority when both are present.
 
 ```env
 DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require
 POSTGRES_SCHEMA=missionguard
 ```
 
-For local PostgreSQL or Docker Compose, use `POSTGRES_USER`,
-`POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`, and `POSTGRES_DB`. Server
-environment variables take priority over values stored in a local `.env` file.
+For local PostgreSQL or Docker Compose, use:
+
+```env
+POSTGRES_USER=missionguard
+POSTGRES_PASSWORD=CHANGE_ME
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=missionguard_ai
+POSTGRES_SCHEMA=missionguard
+```
+
+Server environment variables take priority over values stored in a local `.env` file.
 
 Useful database commands:
 
@@ -341,3 +526,18 @@ python scripts/bootstrap_database.py
 python scripts/initialize_database.py
 python scripts/test_database.py
 ```
+
+---
+
+## Deployment Status
+
+MissionGuard AI is currently:
+
+- deployed on AWS Lightsail;
+- running through Docker Compose;
+- connected to PostgreSQL;
+- protected behind Nginx;
+- available through HTTPS;
+- configured to restart after server reboots;
+- backed up using an AWS Lightsail snapshot;
+- available publicly through the MissionGuard DuckDNS address.
