@@ -67,10 +67,7 @@ def print_primary_key(
     print("\nPRIMARY KEY:")
 
     if constrained_columns:
-        print(
-            "- "
-            + ", ".join(constrained_columns)
-        )
+        print("- " + ", ".join(constrained_columns))
 
     else:
         print("- No primary key found.")
@@ -110,13 +107,7 @@ def print_foreign_keys(
             [],
         )
 
-        print(
-            f"- {constrained_columns}"
-            f" -> "
-            f"{referred_schema}."
-            f"{referred_table}"
-            f"{referred_columns}"
-        )
+        print(f"- {constrained_columns} -> {referred_schema}.{referred_table}{referred_columns}")
 
 
 def print_unique_constraints(
@@ -135,11 +126,7 @@ def print_unique_constraints(
         return
 
     for constraint in constraints:
-        print(
-            f"- name={constraint.get('name')!r}"
-            f" | columns="
-            f"{constraint.get('column_names', [])}"
-        )
+        print(f"- name={constraint.get('name')!r} | columns={constraint.get('column_names', [])}")
 
 
 def print_check_constraints(
@@ -158,11 +145,7 @@ def print_check_constraints(
         return
 
     for constraint in constraints:
-        print(
-            f"- name={constraint.get('name')!r}"
-            f" | sqltext="
-            f"{constraint.get('sqltext')!r}"
-        )
+        print(f"- name={constraint.get('name')!r} | sqltext={constraint.get('sqltext')!r}")
 
 
 def print_indexes(
@@ -193,9 +176,7 @@ def inspect_table(
     table_name: str,
 ) -> None:
     print("\n" + "=" * 90)
-    print(
-        f"TABLE: {POSTGRES_SCHEMA}.{table_name}"
-    )
+    print(f"TABLE: {POSTGRES_SCHEMA}.{table_name}")
     print("=" * 90)
 
     table_exists = inspector.has_table(
@@ -243,10 +224,7 @@ def main() -> None:
     print("MissionGuard Model and Analysis Tables Inspection")
     print("=" * 90)
 
-    print(
-        f"PostgreSQL schema: "
-        f"{POSTGRES_SCHEMA}"
-    )
+    print(f"PostgreSQL schema: {POSTGRES_SCHEMA}")
 
     inspector = inspect(engine)
 

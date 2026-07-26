@@ -120,20 +120,25 @@ def _safe_shape_statistic(function: Any, values: np.ndarray) -> float:
 def _coerce_binary_label(series: pd.Series, column_name: str) -> tuple[pd.Series, int]:
     mapped = series.copy()
     if mapped.dtype == object or pd.api.types.is_string_dtype(mapped):
-        mapped = mapped.astype(str).str.strip().str.lower().replace(
-            {
-                "normal": 0,
-                "nominal": 0,
-                "false": 0,
-                "no": 0,
-                "anomaly": 1,
-                "anomalous": 1,
-                "true": 1,
-                "yes": 1,
-                "nan": np.nan,
-                "none": np.nan,
-                "": np.nan,
-            }
+        mapped = (
+            mapped.astype(str)
+            .str.strip()
+            .str.lower()
+            .replace(
+                {
+                    "normal": 0,
+                    "nominal": 0,
+                    "false": 0,
+                    "no": 0,
+                    "anomaly": 1,
+                    "anomalous": 1,
+                    "true": 1,
+                    "yes": 1,
+                    "nan": np.nan,
+                    "none": np.nan,
+                    "": np.nan,
+                }
+            )
         )
     numeric = pd.to_numeric(mapped, errors="coerce")
     invalid_mask = numeric.notna() & ~numeric.isin([0, 1])
@@ -163,7 +168,9 @@ def normalize_raw_segments(frame: pd.DataFrame) -> tuple[pd.DataFrame, UploadVal
     if "label" not in data.columns:
         data["label"] = "unknown"
 
-    duplicate_subset = [c for c in ["segment", "channel", "timestamp", "value"] if c in data.columns]
+    duplicate_subset = [
+        c for c in ["segment", "channel", "timestamp", "value"] if c in data.columns
+    ]
     duplicate_rows = int(data.duplicated(subset=duplicate_subset).sum())
     if duplicate_rows:
         data = data.drop_duplicates(subset=duplicate_subset).copy()
@@ -199,9 +206,13 @@ def normalize_raw_segments(frame: pd.DataFrame) -> tuple[pd.DataFrame, UploadVal
     data["anomaly"], invalid_labels = _coerce_binary_label(data["anomaly"], "anomaly")
     data["train"], invalid_split = _coerce_binary_label(data["train"], "train")
     if invalid_labels:
-        messages.append(f"Ignored {invalid_labels} invalid ground-truth label value(s); only 0/1 are accepted.")
+        messages.append(
+            f"Ignored {invalid_labels} invalid ground-truth label value(s); only 0/1 are accepted."
+        )
     if invalid_split:
-        messages.append(f"Ignored {invalid_split} invalid train/test split value(s); only 0/1 are accepted.")
+        messages.append(
+            f"Ignored {invalid_split} invalid train/test split value(s); only 0/1 are accepted."
+        )
 
     data = data.sort_values(["segment", "timestamp"]).reset_index(drop=True)
 
@@ -227,7 +238,11 @@ def normalize_raw_segments(frame: pd.DataFrame) -> tuple[pd.DataFrame, UploadVal
             data.loc[group.index, "sampling"] = max(inferred, 1)
         else:
             valid_sampling = group["sampling"].dropna()
-            replacement = float(valid_sampling[valid_sampling > 0].median()) if (valid_sampling > 0).any() else 1.0
+            replacement = (
+                float(valid_sampling[valid_sampling > 0].median())
+                if (valid_sampling > 0).any()
+                else 1.0
+            )
             data.loc[group.index, "sampling"] = group["sampling"].fillna(replacement).clip(lower=1)
 
     label_coverage = float(data["anomaly"].notna().mean())
@@ -326,9 +341,13 @@ def normalize_feature_frame(frame: pd.DataFrame) -> tuple[pd.DataFrame, UploadVa
     data["anomaly"], invalid_labels = _coerce_binary_label(data["anomaly"], "anomaly")
     data["train"], invalid_split = _coerce_binary_label(data["train"], "train")
     if invalid_labels:
-        messages.append(f"Ignored {invalid_labels} invalid ground-truth label value(s); only 0/1 are accepted.")
+        messages.append(
+            f"Ignored {invalid_labels} invalid ground-truth label value(s); only 0/1 are accepted."
+        )
     if invalid_split:
-        messages.append(f"Ignored {invalid_split} invalid train/test split value(s); only 0/1 are accepted.")
+        messages.append(
+            f"Ignored {invalid_split} invalid train/test split value(s); only 0/1 are accepted."
+        )
 
     numeric_columns = [c for c in FEATURE_SCHEMA if c != "channel"]
     data[numeric_columns] = data[numeric_columns].replace([np.inf, -np.inf], np.nan)
@@ -376,16 +395,22 @@ def detect_and_prepare_upload(
     )
 
 
-def validate_features_against_artifact(frame: pd.DataFrame, artifact: dict[str, Any]) -> dict[str, Any]:
+def validate_features_against_artifact(
+    frame: pd.DataFrame, artifact: dict[str, Any]
+) -> dict[str, Any]:
     features, _ = normalize_feature_frame(frame)
     trained_channels = set(map(str, artifact.get("channels", [])))
     incoming_channels = set(features["channel"].astype(str))
     unknown_channels = sorted(incoming_channels - trained_channels)
-    known_ratio = float(features["channel"].isin(trained_channels).mean()) if trained_channels else 0.0
+    known_ratio = (
+        float(features["channel"].isin(trained_channels).mean()) if trained_channels else 0.0
+    )
     label_coverage = float(features["anomaly"].notna().mean())
     warnings: list[str] = []
     if len(features) < 3:
-        warnings.append("Fewer than three segments were supplied; aggregate validation and drift estimates are unstable.")
+        warnings.append(
+            "Fewer than three segments were supplied; aggregate validation and drift estimates are unstable."
+        )
     if unknown_channels:
         warnings.append(
             "Unknown telemetry channel(s) are not represented in model training: "
@@ -393,9 +418,13 @@ def validate_features_against_artifact(frame: pd.DataFrame, artifact: dict[str, 
             + ". Predictions are allowed, but reliability is reduced."
         )
     if label_coverage == 0:
-        warnings.append("No ground-truth anomaly labels are available; predictive accuracy cannot be scored.")
+        warnings.append(
+            "No ground-truth anomaly labels are available; predictive accuracy cannot be scored."
+        )
     elif label_coverage < 1:
-        warnings.append(f"Ground-truth labels are available for only {label_coverage:.1%} of segments.")
+        warnings.append(
+            f"Ground-truth labels are available for only {label_coverage:.1%} of segments."
+        )
 
     if known_ratio == 1 and len(features) >= 3:
         status = "Good"
@@ -581,7 +610,11 @@ def predict_feature_rows(frame: pd.DataFrame, artifact: dict[str, Any]) -> pd.Da
     watch_threshold = max(10.0, threshold - 18.0)
     critical_threshold = max(82.0, threshold + 18.0)
     result["risk_level"] = np.select(
-        [hybrid_score >= critical_threshold, hybrid_score >= threshold, hybrid_score >= watch_threshold],
+        [
+            hybrid_score >= critical_threshold,
+            hybrid_score >= threshold,
+            hybrid_score >= watch_threshold,
+        ],
         ["Critical", "Warning", "Watch"],
         default="Normal",
     )
@@ -702,9 +735,10 @@ def _segment_boundaries(raw_segments: pd.DataFrame | None) -> pd.DataFrame | Non
     raw = raw.dropna(subset=["timestamp"])
     if raw.empty:
         return None
-    return (
-        raw.groupby(["segment", "channel"], as_index=False)
-        .agg(start_time=("timestamp", "min"), end_time=("timestamp", "max"), sampling=("sampling", "median"))
+    return raw.groupby(["segment", "channel"], as_index=False).agg(
+        start_time=("timestamp", "min"),
+        end_time=("timestamp", "max"),
+        sampling=("sampling", "median"),
     )
 
 
@@ -717,14 +751,38 @@ def build_event_table(
     required = {"segment", "channel", positive_column}
     if not required.issubset(frame.columns):
         return pd.DataFrame(
-            columns=["event_id", "channel", "first_segment", "last_segment", "segment_count", "segment_ids", "start_time", "end_time"]
+            columns=[
+                "event_id",
+                "channel",
+                "first_segment",
+                "last_segment",
+                "segment_count",
+                "segment_ids",
+                "start_time",
+                "end_time",
+            ]
         )
-    rows = frame[["segment", "channel", positive_column]].drop_duplicates(["segment", "channel"]).copy()
-    rows[positive_column] = pd.to_numeric(rows[positive_column], errors="coerce").fillna(0).astype(int)
+    rows = (
+        frame[["segment", "channel", positive_column]]
+        .drop_duplicates(["segment", "channel"])
+        .copy()
+    )
+    rows[positive_column] = (
+        pd.to_numeric(rows[positive_column], errors="coerce").fillna(0).astype(int)
+    )
     rows = rows[rows[positive_column] == 1].copy()
     if rows.empty:
         return pd.DataFrame(
-            columns=["event_id", "channel", "first_segment", "last_segment", "segment_count", "segment_ids", "start_time", "end_time"]
+            columns=[
+                "event_id",
+                "channel",
+                "first_segment",
+                "last_segment",
+                "segment_count",
+                "segment_ids",
+                "start_time",
+                "end_time",
+            ]
         )
 
     boundaries = _segment_boundaries(raw_segments)
@@ -747,13 +805,19 @@ def build_event_table(
             if previous is not None:
                 if pd.notna(row["start_time"]) and pd.notna(previous["end_time"]):
                     gap_seconds = float((row["start_time"] - previous["end_time"]).total_seconds())
-                    tolerance = max(60.0, 3.0 * max(float(row.get("sampling", 1)), float(previous.get("sampling", 1))))
+                    tolerance = max(
+                        60.0,
+                        3.0
+                        * max(float(row.get("sampling", 1)), float(previous.get("sampling", 1))),
+                    )
                     same_event = gap_seconds <= tolerance
                 else:
                     same_event = int(row["segment"]) == int(previous["segment"]) + 1
             if current and not same_event:
                 event_counter += 1
-                event_rows.append(_event_row(current, channel, f"{event_prefix}{event_counter:03d}"))
+                event_rows.append(
+                    _event_row(current, channel, f"{event_prefix}{event_counter:03d}")
+                )
                 current = []
             current.append(row)
             previous = row
@@ -789,7 +853,9 @@ def evaluate_event_detection(
     if label_column not in predictions.columns or predictions[label_column].notna().sum() == 0:
         return None, pd.DataFrame()
 
-    truth_events = build_event_table(predictions.dropna(subset=[label_column]), label_column, raw_segments, "GT")
+    truth_events = build_event_table(
+        predictions.dropna(subset=[label_column]), label_column, raw_segments, "GT"
+    )
     predicted_events = build_event_table(predictions, prediction_column, raw_segments, "P")
 
     truth_sets = [set(event) for event in truth_events.get("segment_ids", [])]
@@ -826,7 +892,9 @@ def evaluate_event_detection(
                 "Segments": ", ".join(map(str, truth_row["segment_ids"])),
                 "Segment Count": truth_row["segment_count"],
                 "Status": "Detected" if matches else "Missed",
-                "Matched Prediction": ", ".join(predicted_events.loc[matches, "event_id"].tolist()) if matches else "—",
+                "Matched Prediction": ", ".join(predicted_events.loc[matches, "event_id"].tolist())
+                if matches
+                else "—",
                 "Start": truth_row["start_time"],
                 "End": truth_row["end_time"],
             }
@@ -867,19 +935,28 @@ def assess_data_drift(
     numeric = list(artifact["numeric_features"])
     reference_mean = pd.Series(artifact["normal_feature_mean"], dtype=float).reindex(numeric)
     reference_std = (
-        pd.Series(artifact["normal_feature_std"], dtype=float).reindex(numeric).replace(0, 1.0).fillna(1.0)
+        pd.Series(artifact["normal_feature_std"], dtype=float)
+        .reindex(numeric)
+        .replace(0, 1.0)
+        .fillna(1.0)
     )
     current_mean = features[numeric].mean()
     current_std = features[numeric].std(ddof=1).fillna(0.0)
 
-    mean_shift = ((current_mean - reference_mean).abs() / reference_std).replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    mean_shift = (
+        ((current_mean - reference_mean).abs() / reference_std)
+        .replace([np.inf, -np.inf], np.nan)
+        .fillna(0.0)
+    )
     if len(features) >= 5:
         spread_ratio = (current_std / reference_std).replace([np.inf, -np.inf], np.nan).fillna(0.0)
         spread_shift = np.abs(np.log(spread_ratio.clip(lower=1e-6))).clip(upper=5.0)
     else:
         spread_ratio = pd.Series(1.0, index=numeric)
         spread_shift = pd.Series(0.0, index=numeric)
-    drift_score = pd.concat([mean_shift.rename("mean"), spread_shift.rename("spread")], axis=1).max(axis=1)
+    drift_score = pd.concat([mean_shift.rename("mean"), spread_shift.rename("spread")], axis=1).max(
+        axis=1
+    )
     level = pd.cut(
         drift_score,
         bins=[-np.inf, 0.75, 1.5, np.inf],
@@ -915,7 +992,9 @@ def assess_data_drift(
 
     notes: list[str] = []
     if len(features) < 5:
-        notes.append("Drift estimates are based on fewer than five segments; spread comparisons were disabled.")
+        notes.append(
+            "Drift estimates are based on fewer than five segments; spread comparisons were disabled."
+        )
     if unknown_channels:
         notes.append("Unknown channel(s): " + ", ".join(unknown_channels))
     notes.append(
@@ -928,7 +1007,9 @@ def assess_data_drift(
         "segments": len(features),
         "high_features": high_count,
         "moderate_features": moderate_count,
-        "affected_features": details.loc[details["Level"].isin(["Moderate", "High"]), "Feature"].tolist(),
+        "affected_features": details.loc[
+            details["Level"].isin(["Moderate", "High"]), "Feature"
+        ].tolist(),
         "unknown_channels": unknown_channels,
         "notes": notes,
     }

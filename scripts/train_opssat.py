@@ -35,7 +35,9 @@ def _write_processed_splits(data: pd.DataFrame, artifact: dict) -> None:
     fit_ids = set(map(int, artifact["internal_fit_segment_ids"]))
     validation_ids = set(map(int, artifact["validation_segment_ids"]))
     train_features = features[(features["train"] == 1) & features["segment"].isin(fit_ids)].copy()
-    validation_features = features[(features["train"] == 1) & features["segment"].isin(validation_ids)].copy()
+    validation_features = features[
+        (features["train"] == 1) & features["segment"].isin(validation_ids)
+    ].copy()
     test_features = features[features["train"] == 0].copy()
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)

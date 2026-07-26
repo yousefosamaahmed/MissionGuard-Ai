@@ -34,10 +34,7 @@ def _env_flag(name: str, default: bool = False) -> bool:
     if clean_value in _FALSE_VALUES:
         return False
 
-    raise RuntimeError(
-        f"{name} must be one of: "
-        "true/false, yes/no, on/off, 1/0."
-    )
+    raise RuntimeError(f"{name} must be one of: true/false, yes/no, on/off, 1/0.")
 
 
 def database_requested() -> bool:
@@ -54,10 +51,7 @@ def database_requested() -> bool:
     if explicit_value is not None and explicit_value.strip():
         return _env_flag("DATABASE_ENABLED", default=False)
 
-    return bool(
-        os.getenv("DATABASE_URL", "").strip()
-        or os.getenv("POSTGRES_USER", "").strip()
-    )
+    return bool(os.getenv("DATABASE_URL", "").strip() or os.getenv("POSTGRES_USER", "").strip())
 
 
 def _env_int(name: str, default: int, minimum: int = 0) -> int:
@@ -96,8 +90,7 @@ def _normalise_database_url(raw_url: str) -> URL:
 
     if not url.drivername.startswith("postgresql"):
         raise RuntimeError(
-            "DATABASE_URL must point to PostgreSQL. "
-            f"Received driver: {url.drivername!r}"
+            f"DATABASE_URL must point to PostgreSQL. Received driver: {url.drivername!r}"
         )
 
     # The project installs psycopg 3, so normalise provider URLs that omit
@@ -111,8 +104,7 @@ def _normalise_database_url(raw_url: str) -> URL:
 
     if url.drivername != "postgresql+psycopg":
         raise RuntimeError(
-            "MissionGuard requires the SQLAlchemy psycopg driver. "
-            f"Received: {url.drivername!r}"
+            f"MissionGuard requires the SQLAlchemy psycopg driver. Received: {url.drivername!r}"
         )
 
     return url
@@ -170,9 +162,7 @@ class DatabaseSettings:
                     int(connect_timeout),
                 )
             except ValueError as error:
-                raise RuntimeError(
-                    "POSTGRES_CONNECT_TIMEOUT must be a valid integer."
-                ) from error
+                raise RuntimeError("POSTGRES_CONNECT_TIMEOUT must be a valid integer.") from error
 
         return args
 
@@ -229,16 +219,10 @@ def get_database_settings() -> DatabaseSettings:
         port = _env_int("POSTGRES_PORT", 5432, minimum=1)
 
         if not user:
-            raise RuntimeError(
-                "Set DATABASE_URL or POSTGRES_USER when "
-                "DATABASE_ENABLED=true."
-            )
+            raise RuntimeError("Set DATABASE_URL or POSTGRES_USER when DATABASE_ENABLED=true.")
 
         if not password:
-            raise RuntimeError(
-                "Set DATABASE_URL or POSTGRES_PASSWORD when "
-                "DATABASE_ENABLED=true."
-            )
+            raise RuntimeError("Set DATABASE_URL or POSTGRES_PASSWORD when DATABASE_ENABLED=true.")
 
         query: dict[str, str] = {}
         sslmode = os.getenv("POSTGRES_SSLMODE", "").strip()
@@ -262,9 +246,7 @@ def get_database_settings() -> DatabaseSettings:
     if not url.database:
         raise RuntimeError("The PostgreSQL database name is missing.")
 
-    schema = _validated_schema(
-        os.getenv("POSTGRES_SCHEMA", "missionguard")
-    )
+    schema = _validated_schema(os.getenv("POSTGRES_SCHEMA", "missionguard"))
 
     return DatabaseSettings(
         url=url,

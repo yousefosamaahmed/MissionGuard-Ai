@@ -36,23 +36,15 @@ def main() -> None:
     print("MissionGuard Telemetry Storage Test")
     print("=" * 70)
 
-    unique_suffix = (
-        uuid4()
-        .hex[:8]
-        .upper()
-    )
+    unique_suffix = uuid4().hex[:8].upper()
 
     print("\n1. Creating mission...")
 
     mission_id = create_mission(
         name="MissionGuard Telemetry Test",
-        mission_code=(
-            f"TEL-{unique_suffix}"
-        ),
+        mission_code=(f"TEL-{unique_suffix}"),
         spacecraft_name="ESA OPS-SAT",
-        description=(
-            "Telemetry samples and feature vectors test."
-        ),
+        description=("Telemetry samples and feature vectors test."),
         status="active",
     )
 
@@ -62,15 +54,10 @@ def main() -> None:
 
     dataset_id = create_dataset(
         name="Synthetic Telemetry Test Dataset",
-        dataset_code=(
-            f"SYN-{unique_suffix}"
-        ),
+        dataset_code=(f"SYN-{unique_suffix}"),
         source_type="synthetic",
         source_organization="MissionGuard AI",
-        description=(
-            "Synthetic telemetry records for "
-            "database integration testing."
-        ),
+        description=("Synthetic telemetry records for database integration testing."),
         version="1.0",
         row_count=5,
         feature_count=6,
@@ -85,28 +72,21 @@ def main() -> None:
 
     print("\n3. Creating telemetry session...")
 
-    telemetry_session_id = (
-        create_telemetry_session(
-            session_name=(
-                "Synthetic Telemetry Storage Test"
-            ),
-            source_type="simulation",
-            mission_id=mission_id,
-            dataset_id=dataset_id,
-            source_file_name=None,
-            sampling_interval_seconds=60.0,
-            total_samples=5,
-            validation_status="valid",
-            metadata={
-                "test": True,
-            },
-        )
+    telemetry_session_id = create_telemetry_session(
+        session_name=("Synthetic Telemetry Storage Test"),
+        source_type="simulation",
+        mission_id=mission_id,
+        dataset_id=dataset_id,
+        source_file_name=None,
+        sampling_interval_seconds=60.0,
+        total_samples=5,
+        validation_status="valid",
+        metadata={
+            "test": True,
+        },
     )
 
-    print(
-        "Telemetry session ID: "
-        f"{telemetry_session_id}"
-    )
+    print(f"Telemetry session ID: {telemetry_session_id}")
 
     base_timestamp = datetime(
         2026,
@@ -138,10 +118,7 @@ def main() -> None:
         },
         {
             "sample_index": 1,
-            "timestamp": (
-                base_timestamp
-                + timedelta(minutes=1)
-            ),
+            "timestamp": (base_timestamp + timedelta(minutes=1)),
             "split_type": "upload",
             "ground_truth_label": False,
             "anomaly_type": None,
@@ -159,10 +136,7 @@ def main() -> None:
         },
         {
             "sample_index": 2,
-            "timestamp": (
-                base_timestamp
-                + timedelta(minutes=2)
-            ),
+            "timestamp": (base_timestamp + timedelta(minutes=2)),
             "split_type": "upload",
             "ground_truth_label": False,
             "anomaly_type": None,
@@ -180,15 +154,10 @@ def main() -> None:
         },
         {
             "sample_index": 3,
-            "timestamp": (
-                base_timestamp
-                + timedelta(minutes=3)
-            ),
+            "timestamp": (base_timestamp + timedelta(minutes=3)),
             "split_type": "upload",
             "ground_truth_label": True,
-            "anomaly_type": (
-                "thermal_voltage_anomaly"
-            ),
+            "anomaly_type": ("thermal_voltage_anomaly"),
             "sample_metadata": {
                 "source": "synthetic_test",
                 "severity": "high",
@@ -204,10 +173,7 @@ def main() -> None:
         },
         {
             "sample_index": 4,
-            "timestamp": (
-                base_timestamp
-                + timedelta(minutes=4)
-            ),
+            "timestamp": (base_timestamp + timedelta(minutes=4)),
             "split_type": "upload",
             "ground_truth_label": False,
             "anomaly_type": None,
@@ -230,9 +196,7 @@ def main() -> None:
     save_result = save_telemetry_batch(
         session_id=telemetry_session_id,
         records=telemetry_records,
-        feature_schema_name=(
-            "missionguard_core"
-        ),
+        feature_schema_name=("missionguard_core"),
         feature_schema_version="1.0",
         quality_report={
             "row_count": 5,
@@ -254,94 +218,53 @@ def main() -> None:
                 "detected_interval_seconds": 60,
                 "is_regular": True,
             },
-            "validation_messages": [
-                (
-                    "One synthetic anomaly was "
-                    "included intentionally."
-                )
-            ],
+            "validation_messages": [("One synthetic anomaly was included intentionally.")],
             "overall_status": "valid",
         },
     )
 
-    print(
-        f"Stored samples: "
-        f"{save_result.inserted_samples}"
-    )
+    print(f"Stored samples: {save_result.inserted_samples}")
 
-    print(
-        f"Stored feature vectors: "
-        f"{save_result.inserted_feature_vectors}"
-    )
+    print(f"Stored feature vectors: {save_result.inserted_feature_vectors}")
 
-    print(
-        f"Quality report ID: "
-        f"{save_result.quality_report_id}"
-    )
+    print(f"Quality report ID: {save_result.quality_report_id}")
 
     print("\n5. Reading stored samples...")
 
-    stored_samples = list_telemetry_samples(
-        telemetry_session_id
-    )
+    stored_samples = list_telemetry_samples(telemetry_session_id)
 
     for sample in stored_samples:
         print(
             "-",
             f"index={sample['sample_index']}",
             f"id={sample['id']}",
-            (
-                f"anomaly="
-                f"{sample['ground_truth_label']}"
-            ),
+            (f"anomaly={sample['ground_truth_label']}"),
         )
 
     print("\n6. Reading feature vectors...")
 
-    stored_features = list_feature_vectors(
-        telemetry_session_id
-    )
+    stored_features = list_feature_vectors(telemetry_session_id)
 
-    print(
-        f"Feature vectors found: "
-        f"{len(stored_features)}"
-    )
+    print(f"Feature vectors found: {len(stored_features)}")
 
     print("\n7. Reading quality report...")
 
-    stored_report = get_data_quality_report(
-        telemetry_session_id
-    )
+    stored_report = get_data_quality_report(telemetry_session_id)
 
     if stored_report is None:
-        raise RuntimeError(
-            "Data-quality report was not found."
-        )
+        raise RuntimeError("Data-quality report was not found.")
 
-    print(
-        f"Quality status: "
-        f"{stored_report['overall_status']}"
-    )
+    print(f"Quality status: {stored_report['overall_status']}")
 
-    print(
-        f"Quality row count: "
-        f"{stored_report['row_count']}"
-    )
+    print(f"Quality row count: {stored_report['row_count']}")
 
     if len(stored_samples) != 5:
-        raise RuntimeError(
-            "Expected 5 telemetry samples."
-        )
+        raise RuntimeError("Expected 5 telemetry samples.")
 
     if len(stored_features) != 5:
-        raise RuntimeError(
-            "Expected 5 feature vectors."
-        )
+        raise RuntimeError("Expected 5 feature vectors.")
 
-    print(
-        "\nTelemetry storage test "
-        "completed successfully."
-    )
+    print("\nTelemetry storage test completed successfully.")
 
 
 if __name__ == "__main__":

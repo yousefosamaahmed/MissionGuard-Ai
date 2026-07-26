@@ -86,9 +86,7 @@ def _require_dictionary(
         return {}
 
     if not isinstance(value, dict):
-        raise TypeError(
-            f"{field_name} must be a dictionary."
-        )
+        raise TypeError(f"{field_name} must be a dictionary.")
 
     return value
 
@@ -100,18 +98,9 @@ def _safe_incident_token(
     Convert a channel name into a safe incident-code token.
     """
 
-    normalized = "".join(
-        character
-        if character.isalnum()
-        else "-"
-        for character in value.upper()
-    )
+    normalized = "".join(character if character.isalnum() else "-" for character in value.upper())
 
-    normalized = "-".join(
-        part
-        for part in normalized.split("-")
-        if part
-    )
+    normalized = "-".join(part for part in normalized.split("-") if part)
 
     return normalized[:24] or "UNKNOWN"
 
@@ -141,16 +130,11 @@ def _build_inference_frame(
         )
 
         missing_features = [
-            feature_name
-            for feature_name in numeric_features
-            if feature_name not in feature_values
+            feature_name for feature_name in numeric_features if feature_name not in feature_values
         ]
 
         if missing_features:
-            raise ValueError(
-                "Stored feature vector is missing: "
-                + ", ".join(missing_features)
-            )
+            raise ValueError("Stored feature vector is missing: " + ", ".join(missing_features))
 
         segment = sample_metadata.get(
             "segment",
@@ -171,28 +155,20 @@ def _build_inference_frame(
 
         dataframe_row: dict[str, Any] = {
             "segment": segment,
-
             # The real label is deliberately excluded.
             # predict_feature_rows() preserves this column,
             # but it is not passed as a model feature.
             "anomaly": 0.0,
-
             "train": train_flag,
             "channel": channel,
         }
 
         for feature_name in numeric_features:
-            dataframe_row[feature_name] = (
-                feature_values[feature_name]
-            )
+            dataframe_row[feature_name] = feature_values[feature_name]
 
-        dataframe_rows.append(
-            dataframe_row
-        )
+        dataframe_rows.append(dataframe_row)
 
-    dataframe = pd.DataFrame(
-        dataframe_rows
-    )
+    dataframe = pd.DataFrame(dataframe_rows)
 
     expected_columns = [
         "segment",
@@ -225,13 +201,8 @@ def _build_prediction_records(
     prediction records.
     """
 
-    if len(source_records) != len(
-        prediction_frame
-    ):
-        raise RuntimeError(
-            "Model output count does not match "
-            "the PostgreSQL feature count."
-        )
+    if len(source_records) != len(prediction_frame):
+        raise RuntimeError("Model output count does not match the PostgreSQL feature count.")
 
     trained_channels = {
         str(channel)
@@ -246,17 +217,11 @@ def _build_prediction_records(
         "thresholds",
     )
 
-    artifact_version = artifact.get(
-        "artifact_version"
-    )
+    artifact_version = artifact.get("artifact_version")
 
-    model_rows = prediction_frame.to_dict(
-        orient="records"
-    )
+    model_rows = prediction_frame.to_dict(orient="records")
 
-    prediction_records: list[
-        dict[str, Any]
-    ] = []
+    prediction_records: list[dict[str, Any]] = []
 
     for source_record, prediction_row in zip(
         source_records,
@@ -264,9 +229,7 @@ def _build_prediction_records(
         strict=True,
     ):
         sample_metadata = _require_dictionary(
-            source_record.get(
-                "sample_metadata"
-            ),
+            source_record.get("sample_metadata"),
             "sample_metadata",
         )
 
@@ -282,30 +245,16 @@ def _build_prediction_records(
 
         segment = sample_metadata.get(
             "segment",
-            prediction_row.get(
-                "segment"
-            ),
+            prediction_row.get("segment"),
         )
 
-        risk_level = str(
-            prediction_row[
-                "risk_level"
-            ]
-        )
+        risk_level = str(prediction_row["risk_level"])
 
-        predicted_anomaly = bool(
-            int(
-                prediction_row[
-                    "prediction"
-                ]
-            )
-        )
+        predicted_anomaly = bool(int(prediction_row["prediction"]))
 
-        feature_contributions_value = (
-            prediction_row.get(
-                "feature_contributions",
-                {},
-            )
+        feature_contributions_value = prediction_row.get(
+            "feature_contributions",
+            {},
         )
 
         if not isinstance(
@@ -314,55 +263,25 @@ def _build_prediction_records(
         ):
             feature_contributions_value = {}
 
-        isolation_score = float(
-            prediction_row[
-                "isolation_score"
-            ]
-        )
+        isolation_score = float(prediction_row["isolation_score"])
 
-        supervised_score = float(
-            prediction_row[
-                "supervised_score"
-            ]
-        )
+        supervised_score = float(prediction_row["supervised_score"])
 
-        hybrid_score = float(
-            prediction_row[
-                "hybrid_score"
-            ]
-        )
+        hybrid_score = float(prediction_row["hybrid_score"])
 
-        confidence = float(
-            prediction_row[
-                "confidence"
-            ]
-        )
+        confidence = float(prediction_row["confidence"])
 
-        decision_margin = float(
-            prediction_row[
-                "decision_margin"
-            ]
-        )
+        decision_margin = float(prediction_row["decision_margin"])
 
-        top_feature = str(
-            prediction_row[
-                "top_feature"
-            ]
-        )
+        top_feature = str(prediction_row["top_feature"])
 
-        top_feature_contribution = float(
-            prediction_row[
-                "top_feature_contribution"
-            ]
-        )
+        top_feature_contribution = float(prediction_row["top_feature_contribution"])
 
-        out_of_distribution = (
-            bool(trained_channels)
-            and channel not in trained_channels
-        )
+        out_of_distribution = bool(trained_channels) and channel not in trained_channels
 
         human_review_required = (
-            risk_level in {
+            risk_level
+            in {
                 "Watch",
                 "Warning",
                 "Critical",
@@ -372,74 +291,38 @@ def _build_prediction_records(
 
         prediction_records.append(
             {
-                "telemetry_sample_id": int(
-                    source_record[
-                        "telemetry_sample_id"
-                    ]
-                ),
-                "predicted_anomaly": (
-                    predicted_anomaly
-                ),
+                "telemetry_sample_id": int(source_record["telemetry_sample_id"]),
+                "predicted_anomaly": (predicted_anomaly),
                 "risk_level": risk_level,
                 "risk_score": hybrid_score,
                 "confidence_score": confidence,
-                "isolation_score": (
-                    isolation_score
-                ),
+                "isolation_score": (isolation_score),
                 "forecast_residual_score": None,
-
                 # The supervised score is not a
                 # rule-engine score, so it remains
                 # inside prediction_metadata.
                 "rule_score": None,
-
                 "persistence_score": None,
                 "early_warning_score": None,
                 "top_feature": top_feature,
-                "out_of_distribution": (
-                    out_of_distribution
-                ),
-                "human_review_required": (
-                    human_review_required
-                ),
-                "explanation": str(
-                    prediction_row[
-                        "explanation"
-                    ]
-                ),
-                "feature_contributions": (
-                    feature_contributions_value
-                ),
+                "out_of_distribution": (out_of_distribution),
+                "human_review_required": (human_review_required),
+                "explanation": str(prediction_row["explanation"]),
+                "feature_contributions": (feature_contributions_value),
                 "rule_violations": [],
-                "affected_subsystems": [
-                    channel
-                ],
+                "affected_subsystems": [channel],
                 "prediction_metadata": {
                     "production_prediction": True,
                     "dataset_family": "OPS-SAT",
-                    "record_level": (
-                        "segment_features"
-                    ),
+                    "record_level": ("segment_features"),
                     "channel": channel,
                     "segment": segment,
-                    "prediction_label": str(
-                        prediction_row[
-                            "prediction_label"
-                        ]
-                    ),
-                    "supervised_score": (
-                        supervised_score
-                    ),
-                    "decision_margin": (
-                        decision_margin
-                    ),
-                    "top_feature_contribution": (
-                        top_feature_contribution
-                    ),
+                    "prediction_label": str(prediction_row["prediction_label"]),
+                    "supervised_score": (supervised_score),
+                    "decision_margin": (decision_margin),
+                    "top_feature_contribution": (top_feature_contribution),
                     "thresholds": thresholds,
-                    "artifact_version": (
-                        artifact_version
-                    ),
+                    "artifact_version": (artifact_version),
                 },
             }
         )
@@ -485,17 +368,10 @@ def _group_anomalous_predictions(
     """
 
     if max_sample_gap < 1:
-        raise ValueError(
-            "max_sample_gap must be at least 1."
-        )
+        raise ValueError("max_sample_gap must be at least 1.")
 
-    if len(source_records) != len(
-        prediction_records
-    ):
-        raise RuntimeError(
-            "Source-record and prediction counts "
-            "do not match."
-        )
+    if len(source_records) != len(prediction_records):
+        raise RuntimeError("Source-record and prediction counts do not match.")
 
     candidates: list[
         tuple[
@@ -511,17 +387,11 @@ def _group_anomalous_predictions(
         prediction_records,
         strict=True,
     ):
-        if not bool(
-            prediction_record[
-                "predicted_anomaly"
-            ]
-        ):
+        if not bool(prediction_record["predicted_anomaly"]):
             continue
 
         sample_metadata = _require_dictionary(
-            source_record.get(
-                "sample_metadata"
-            ),
+            source_record.get("sample_metadata"),
             "sample_metadata",
         )
 
@@ -532,11 +402,7 @@ def _group_anomalous_predictions(
             )
         )
 
-        sample_index = int(
-            source_record[
-                "sample_index"
-            ]
-        )
+        sample_index = int(source_record["sample_index"])
 
         candidates.append(
             (
@@ -583,18 +449,12 @@ def _group_anomalous_predictions(
             not current_group
             or channel != previous_channel
             or previous_sample_index is None
-            or (
-                sample_index
-                - previous_sample_index
-                > max_sample_gap
-            )
+            or (sample_index - previous_sample_index > max_sample_gap)
         )
 
         if starts_new_group:
             if current_group:
-                groups.append(
-                    current_group
-                )
+                groups.append(current_group)
 
             current_group = []
 
@@ -609,9 +469,7 @@ def _group_anomalous_predictions(
         previous_sample_index = sample_index
 
     if current_group:
-        groups.append(
-            current_group
-        )
+        groups.append(current_group)
 
     return groups
 
@@ -630,25 +488,14 @@ def _highest_group_severity(
     """
 
     severities = [
-        _severity_from_risk_level(
-            str(
-                prediction_record[
-                    "risk_level"
-                ]
-            )
-        )
+        _severity_from_risk_level(str(prediction_record["risk_level"]))
         for _, prediction_record in group
     ]
 
     return max(
         severities,
-        key=lambda severity: (
-            INCIDENT_SEVERITY_ORDER[
-                severity
-            ]
-        ),
+        key=lambda severity: INCIDENT_SEVERITY_ORDER[severity],
     )
-
 
 
 def _safe_upload_file_name(
@@ -664,10 +511,7 @@ def _safe_upload_file_name(
         original_name = "uploaded_opssat.csv"
 
     safe_name = "".join(
-        character
-        if character.isalnum()
-        or character in {"-", "_", "."}
-        else "_"
+        character if character.isalnum() or character in {"-", "_", "."} else "_"
         for character in original_name
     )
 
@@ -719,9 +563,7 @@ def _json_safe_value(
             float("inf"),
             float("-inf"),
         }:
-            raise ValueError(
-                "Infinite values cannot be stored in JSONB."
-            )
+            raise ValueError("Infinite values cannot be stored in JSONB.")
 
         return value
 
@@ -744,22 +586,14 @@ def _build_uploaded_feature_records(
         *numeric_features,
     }
 
-    missing_columns = sorted(
-        required_columns
-        - set(feature_frame.columns)
-    )
+    missing_columns = sorted(required_columns - set(feature_frame.columns))
 
     if missing_columns:
-        raise ValueError(
-            "Uploaded feature frame is missing: "
-            + ", ".join(missing_columns)
-        )
+        raise ValueError("Uploaded feature frame is missing: " + ", ".join(missing_columns))
 
     records: list[dict[str, Any]] = []
 
-    for sample_index, (_, row) in enumerate(
-        feature_frame.reset_index(drop=True).iterrows()
-    ):
+    for sample_index, (_, row) in enumerate(feature_frame.reset_index(drop=True).iterrows()):
         feature_values: dict[str, float] = {}
 
         for feature_name in numeric_features:
@@ -784,13 +618,9 @@ def _build_uploaded_feature_records(
 
             feature_values[feature_name] = numeric_value
 
-        segment = _json_safe_value(
-            row.get("segment", sample_index)
-        )
+        segment = _json_safe_value(row.get("segment", sample_index))
 
-        channel = str(
-            row.get("channel", "unknown")
-        ).strip() or "unknown"
+        channel = str(row.get("channel", "unknown")).strip() or "unknown"
 
         ground_truth_label: bool | None = None
 
@@ -798,14 +628,10 @@ def _build_uploaded_feature_records(
             label_value = row.get("anomaly")
 
             if label_value is not None and pd.notna(label_value):
-                ground_truth_label = bool(
-                    int(float(label_value))
-                )
+                ground_truth_label = bool(int(float(label_value)))
 
         train_flag = _json_safe_value(
-            row.get("train")
-            if "train" in feature_frame.columns
-            else None
+            row.get("train") if "train" in feature_frame.columns else None
         )
 
         records.append(
@@ -829,9 +655,7 @@ def _build_uploaded_feature_records(
         )
 
     if not records:
-        raise ValueError(
-            "Uploaded feature frame cannot be empty."
-        )
+        raise ValueError("Uploaded feature frame cannot be empty.")
 
     return records
 
@@ -857,93 +681,50 @@ def persist_uploaded_opssat_analysis(
     """
 
     if not original_file_bytes:
-        raise ValueError(
-            "Uploaded CSV bytes cannot be empty."
-        )
+        raise ValueError("Uploaded CSV bytes cannot be empty.")
 
     if feature_frame.empty:
-        raise ValueError(
-            "Uploaded feature frame cannot be empty."
-        )
+        raise ValueError("Uploaded feature frame cannot be empty.")
 
-    resolved_project_root = (
-        project_root.expanduser().resolve()
-    )
+    resolved_project_root = project_root.expanduser().resolve()
 
-    resolved_artifact_path = (
-        artifact_path.expanduser().resolve()
-    )
+    resolved_artifact_path = artifact_path.expanduser().resolve()
 
-    artifact = load_artifact(
-        resolved_artifact_path
-    )
+    artifact = load_artifact(resolved_artifact_path)
 
-    numeric_features = [
-        str(feature_name)
-        for feature_name in artifact[
-            "numeric_features"
-        ]
-    ]
+    numeric_features = [str(feature_name) for feature_name in artifact["numeric_features"]]
 
-    clean_file_name = _safe_upload_file_name(
-        original_file_name
-    )
+    clean_file_name = _safe_upload_file_name(original_file_name)
 
-    content_hash = sha256(
-        original_file_bytes
-    ).hexdigest()
+    content_hash = sha256(original_file_bytes).hexdigest()
 
-    created_at = datetime.now(
-        timezone.utc
-    )
+    created_at = datetime.now(timezone.utc)
 
     upload_token = (
-        created_at.strftime("%Y%m%dT%H%M%SZ")
-        + "-"
-        + content_hash[:10]
-        + "-"
-        + uuid4().hex[:6]
+        created_at.strftime("%Y%m%dT%H%M%SZ") + "-" + content_hash[:10] + "-" + uuid4().hex[:6]
     )
 
-    dataset_code = (
-        "UPLOAD-" + upload_token.upper()
-    )
+    dataset_code = "UPLOAD-" + upload_token.upper()
 
-    upload_directory = (
-        resolved_project_root
-        / "data"
-        / "opssat"
-        / "uploads"
-        / upload_token
-    )
+    upload_directory = resolved_project_root / "data" / "opssat" / "uploads" / upload_token
 
     upload_directory.mkdir(
         parents=True,
         exist_ok=False,
     )
 
-    original_file_path = (
-        upload_directory
-        / clean_file_name
-    )
+    original_file_path = upload_directory / clean_file_name
 
-    processed_file_path = (
-        upload_directory
-        / "processed_features.csv"
-    )
+    processed_file_path = upload_directory / "processed_features.csv"
 
-    original_file_path.write_bytes(
-        original_file_bytes
-    )
+    original_file_path.write_bytes(original_file_bytes)
 
     feature_frame.to_csv(
         processed_file_path,
         index=False,
     )
 
-    validation = dict(
-        validation_metadata or {}
-    )
+    validation = dict(validation_metadata or {})
 
     validation_messages = [
         str(message)
@@ -961,12 +742,7 @@ def persist_uploaded_opssat_analysis(
         or 0
     )
 
-    validation_status = (
-        "warning"
-        if removed_rows > 0
-        or validation_messages
-        else "valid"
-    )
+    validation_status = "warning" if removed_rows > 0 or validation_messages else "valid"
 
     label_coverage = float(
         validation.get(
@@ -976,29 +752,17 @@ def persist_uploaded_opssat_analysis(
         or 0.0
     )
 
-    original_relative_path = (
-        original_file_path
-        .relative_to(resolved_project_root)
-        .as_posix()
-    )
+    original_relative_path = original_file_path.relative_to(resolved_project_root).as_posix()
 
-    processed_relative_path = (
-        processed_file_path
-        .relative_to(resolved_project_root)
-        .as_posix()
-    )
+    processed_relative_path = processed_file_path.relative_to(resolved_project_root).as_posix()
 
     dataset_id = create_dataset(
-        name=(
-            "Uploaded OPS-SAT — "
-            + clean_file_name
-        ),
+        name=("Uploaded OPS-SAT — " + clean_file_name),
         dataset_code=dataset_code,
         source_type="upload",
         source_organization="User Upload",
         description=(
-            "User-supplied OPS-SAT-compatible CSV "
-            "validated and persisted by MissionGuard AI."
+            "User-supplied OPS-SAT-compatible CSV validated and persisted by MissionGuard AI."
         ),
         version=created_at.isoformat(),
         row_count=len(feature_frame),
@@ -1047,14 +811,10 @@ def persist_uploaded_opssat_analysis(
         storage_provider="local",
         file_size_bytes=len(processed_bytes),
         mime_type="text/csv",
-        sha256_hash=sha256(
-            processed_bytes
-        ).hexdigest(),
+        sha256_hash=sha256(processed_bytes).hexdigest(),
         row_count=len(feature_frame),
         metadata={
-            "feature_schema_name": (
-                "opssat_segment_features"
-            ),
+            "feature_schema_name": ("opssat_segment_features"),
             "feature_schema_version": "1.0",
             "numeric_features": numeric_features,
         },
@@ -1065,9 +825,7 @@ def persist_uploaded_opssat_analysis(
             "Uploaded OPS-SAT — "
             + clean_file_name
             + " — "
-            + created_at.strftime(
-                "%Y-%m-%d %H:%M:%S UTC"
-            )
+            + created_at.strftime("%Y-%m-%d %H:%M:%S UTC")
         ),
         source_type="uploaded_csv",
         dataset_id=dataset_id,
@@ -1084,32 +842,23 @@ def persist_uploaded_opssat_analysis(
         },
     )
 
-    telemetry_records = (
-        _build_uploaded_feature_records(
-            feature_frame=feature_frame,
-            numeric_features=numeric_features,
-            source_file_name=clean_file_name,
-            upload_kind=upload_kind,
-        )
+    telemetry_records = _build_uploaded_feature_records(
+        feature_frame=feature_frame,
+        numeric_features=numeric_features,
+        source_file_name=clean_file_name,
+        upload_kind=upload_kind,
     )
 
     missing_value_summary = {
         str(column): int(count)
-        for column, count in (
-            feature_frame
-            .isna()
-            .sum()
-            .items()
-        )
+        for column, count in (feature_frame.isna().sum().items())
         if int(count) > 0
     }
 
     save_telemetry_batch(
         session_id=telemetry_session_id,
         records=telemetry_records,
-        feature_schema_name=(
-            "opssat_segment_features"
-        ),
+        feature_schema_name=("opssat_segment_features"),
         feature_schema_version="1.0",
         quality_report={
             "row_count": len(feature_frame),
@@ -1118,29 +867,21 @@ def persist_uploaded_opssat_analysis(
             "long_missing_gaps": 0,
             "constant_sensors": [],
             "out_of_domain_values": {},
-            "missing_value_summary": (
-                missing_value_summary
-            ),
+            "missing_value_summary": (missing_value_summary),
             "sampling_report": {
                 "record_level": "segment_features",
                 "timestamps_available": False,
             },
-            "validation_messages": (
-                validation_messages
-            ),
+            "validation_messages": (validation_messages),
             "overall_status": validation_status,
         },
     )
 
     analysis_result = run_real_opssat_analysis(
-        telemetry_session_id=(
-            telemetry_session_id
-        ),
+        telemetry_session_id=(telemetry_session_id),
         model_version_id=model_version_id,
         artifact_path=resolved_artifact_path,
-        max_incident_sample_gap=(
-            max_incident_sample_gap
-        ),
+        max_incident_sample_gap=(max_incident_sample_gap),
         run_type="live_analysis",
         run_metadata={
             "source_type": "uploaded_csv",
@@ -1155,24 +896,15 @@ def persist_uploaded_opssat_analysis(
 
     return UploadedOpsSatPersistenceResult(
         dataset_id=dataset_id,
-        original_dataset_file_id=(
-            original_dataset_file_id
-        ),
-        processed_dataset_file_id=(
-            processed_dataset_file_id
-        ),
-        telemetry_session_id=(
-            telemetry_session_id
-        ),
+        original_dataset_file_id=(original_dataset_file_id),
+        processed_dataset_file_id=(processed_dataset_file_id),
+        telemetry_session_id=(telemetry_session_id),
         analysis_result=analysis_result,
-        original_file_path=(
-            original_file_path
-        ),
-        processed_file_path=(
-            processed_file_path
-        ),
+        original_file_path=(original_file_path),
+        processed_file_path=(processed_file_path),
         sha256_hash=content_hash,
     )
+
 
 def run_real_opssat_analysis(
     telemetry_session_id: UUID,
@@ -1195,42 +927,23 @@ def run_real_opssat_analysis(
     6. Complete the analysis run.
     """
 
-    resolved_artifact_path = (
-        artifact_path
-        .expanduser()
-        .resolve()
-    )
+    resolved_artifact_path = artifact_path.expanduser().resolve()
 
     if not resolved_artifact_path.exists():
-        raise FileNotFoundError(
-            "OPS-SAT artifact was not found: "
-            f"{resolved_artifact_path}"
-        )
+        raise FileNotFoundError(f"OPS-SAT artifact was not found: {resolved_artifact_path}")
 
-    artifact = load_artifact(
-        resolved_artifact_path
-    )
+    artifact = load_artifact(resolved_artifact_path)
 
-    numeric_features = [
-        str(feature_name)
-        for feature_name in artifact[
-            "numeric_features"
-        ]
-    ]
+    numeric_features = [str(feature_name) for feature_name in artifact["numeric_features"]]
 
-    source_records = (
-        list_session_feature_records(
-            session_id=telemetry_session_id,
-            schema_name=(
-                "opssat_segment_features"
-            ),
-        )
+    source_records = list_session_feature_records(
+        session_id=telemetry_session_id,
+        schema_name=("opssat_segment_features"),
     )
 
     if not source_records:
         raise RuntimeError(
-            "No OPS-SAT feature vectors were found "
-            "for the selected telemetry session."
+            "No OPS-SAT feature vectors were found for the selected telemetry session."
         )
 
     inference_frame = _build_inference_frame(
@@ -1242,23 +955,15 @@ def run_real_opssat_analysis(
         "production_run": True,
         "dataset_family": "OPS-SAT",
         "record_level": "segment_features",
-        "artifact_path": str(
-            resolved_artifact_path
-        ),
-        "input_rows": len(
-            inference_frame
-        ),
+        "artifact_path": str(resolved_artifact_path),
+        "input_rows": len(inference_frame),
         "ground_truth_used_for_inference": False,
         "incident_grouping_enabled": True,
-        "max_incident_sample_gap": (
-            max_incident_sample_gap
-        ),
+        "max_incident_sample_gap": (max_incident_sample_gap),
     }
 
     if run_metadata:
-        base_run_metadata.update(
-            run_metadata
-        )
+        base_run_metadata.update(run_metadata)
 
     analysis_run_id = create_analysis_run(
         session_id=telemetry_session_id,
@@ -1269,93 +974,59 @@ def run_real_opssat_analysis(
     )
 
     try:
-        prediction_frame = (
-            predict_feature_rows(
-                inference_frame,
-                artifact,
-            )
+        prediction_frame = predict_feature_rows(
+            inference_frame,
+            artifact,
         )
 
-        prediction_records = (
-            _build_prediction_records(
-                source_records=source_records,
-                prediction_frame=prediction_frame,
-                artifact=artifact,
-            )
+        prediction_records = _build_prediction_records(
+            source_records=source_records,
+            prediction_frame=prediction_frame,
+            artifact=artifact,
         )
 
-        prediction_result = (
-            save_prediction_batch(
-                analysis_run_id=analysis_run_id,
-                prediction_records=prediction_records,
-            )
+        prediction_result = save_prediction_batch(
+            analysis_run_id=analysis_run_id,
+            prediction_records=prediction_records,
         )
 
-        incident_groups = (
-            _group_anomalous_predictions(
-                source_records=source_records,
-                prediction_records=(
-                    prediction_records
-                ),
-                max_sample_gap=(
-                    max_incident_sample_gap
-                ),
-            )
+        incident_groups = _group_anomalous_predictions(
+            source_records=source_records,
+            prediction_records=(prediction_records),
+            max_sample_gap=(max_incident_sample_gap),
         )
 
-        mission_health_incidents: list[
-            dict[str, object]
-        ] = []
+        mission_health_incidents: list[dict[str, object]] = []
 
         for group_number, group in enumerate(
             incident_groups,
             start=1,
         ):
-            start_source_record = (
-                group[0][0]
-            )
+            start_source_record = group[0][0]
 
-            end_source_record = (
-                group[-1][0]
-            )
+            end_source_record = group[-1][0]
 
             (
                 peak_source_record,
                 peak_prediction_record,
             ) = max(
                 group,
-                key=lambda item: float(
-                    item[1][
-                        "risk_score"
-                    ]
-                ),
+                key=lambda item: float(item[1]["risk_score"]),
             )
 
-            start_metadata = (
-                _require_dictionary(
-                    start_source_record.get(
-                        "sample_metadata"
-                    ),
-                    "sample_metadata",
-                )
+            start_metadata = _require_dictionary(
+                start_source_record.get("sample_metadata"),
+                "sample_metadata",
             )
 
-            end_metadata = (
-                _require_dictionary(
-                    end_source_record.get(
-                        "sample_metadata"
-                    ),
-                    "sample_metadata",
-                )
+            end_metadata = _require_dictionary(
+                end_source_record.get("sample_metadata"),
+                "sample_metadata",
             )
 
-            peak_metadata = (
-                _require_dictionary(
-                    peak_source_record.get(
-                        "sample_metadata"
-                    ),
-                    "sample_metadata",
-                )
+            peak_metadata = _require_dictionary(
+                peak_source_record.get("sample_metadata"),
+                "sample_metadata",
             )
 
             channel = str(
@@ -1365,83 +1036,44 @@ def run_real_opssat_analysis(
                 )
             )
 
-            start_segment = (
-                start_metadata.get(
-                    "segment",
-                    start_source_record[
-                        "sample_index"
-                    ],
-                )
+            start_segment = start_metadata.get(
+                "segment",
+                start_source_record["sample_index"],
             )
 
-            end_segment = (
-                end_metadata.get(
-                    "segment",
-                    end_source_record[
-                        "sample_index"
-                    ],
-                )
+            end_segment = end_metadata.get(
+                "segment",
+                end_source_record["sample_index"],
             )
 
-            sample_indexes = [
-                int(
-                    source_record[
-                        "sample_index"
-                    ]
-                )
-                for source_record, _ in group
-            ]
+            sample_indexes = [int(source_record["sample_index"]) for source_record, _ in group]
 
             segment_ids = [
                 _require_dictionary(
-                    source_record.get(
-                        "sample_metadata"
-                    ),
+                    source_record.get("sample_metadata"),
                     "sample_metadata",
                 ).get(
                     "segment",
-                    source_record[
-                        "sample_index"
-                    ],
+                    source_record["sample_index"],
                 )
                 for source_record, _ in group
             ]
 
-            severity = (
-                _highest_group_severity(
-                    group
-                )
-            )
+            severity = _highest_group_severity(group)
 
-            peak_risk_score = float(
-                peak_prediction_record[
-                    "risk_score"
-                ]
-            )
+            peak_risk_score = float(peak_prediction_record["risk_score"])
 
             peak_confidence = max(
-                float(
-                    prediction_record[
-                        "confidence_score"
-                    ]
-                )
-                for _, prediction_record in group
+                float(prediction_record["confidence_score"]) for _, prediction_record in group
             )
 
             human_review_required = any(
-                bool(
-                    prediction_record[
-                        "human_review_required"
-                    ]
-                )
-                for _, prediction_record in group
+                bool(prediction_record["human_review_required"]) for _, prediction_record in group
             )
 
             incident_code = (
                 "OPS-"
-                + _safe_incident_token(
-                    channel
-                )
+                + _safe_incident_token(channel)
                 + "-"
                 + analysis_run_id.hex[:8].upper()
                 + f"-{group_number:03d}"
@@ -1450,48 +1082,17 @@ def run_real_opssat_analysis(
             _ = create_incident(
                 analysis_run_id=analysis_run_id,
                 incident_code=incident_code,
-                start_sample_id=int(
-                    start_source_record[
-                        "telemetry_sample_id"
-                    ]
-                ),
-                end_sample_id=int(
-                    end_source_record[
-                        "telemetry_sample_id"
-                    ]
-                ),
-                started_at=(
-                    start_source_record.get(
-                        "timestamp"
-                    )
-                ),
-                ended_at=(
-                    end_source_record.get(
-                        "timestamp"
-                    )
-                ),
-                duration_samples=len(
-                    group
-                ),
+                start_sample_id=int(start_source_record["telemetry_sample_id"]),
+                end_sample_id=int(end_source_record["telemetry_sample_id"]),
+                started_at=(start_source_record.get("timestamp")),
+                ended_at=(end_source_record.get("timestamp")),
+                duration_samples=len(group),
                 severity=severity,
-                peak_risk_score=(
-                    peak_risk_score
-                ),
-                peak_confidence=(
-                    peak_confidence
-                ),
-                top_feature=str(
-                    peak_prediction_record.get(
-                        "top_feature"
-                    )
-                    or "unknown"
-                ),
-                affected_subsystems=[
-                    channel
-                ],
-                human_review_required=(
-                    human_review_required
-                ),
+                peak_risk_score=(peak_risk_score),
+                peak_confidence=(peak_confidence),
+                top_feature=str(peak_prediction_record.get("top_feature") or "unknown"),
+                affected_subsystems=[channel],
+                human_review_required=(human_review_required),
                 status="open",
                 summary=(
                     f"{severity} OPS-SAT incident "
@@ -1504,34 +1105,15 @@ def run_real_opssat_analysis(
                 metadata={
                     "production_incident": True,
                     "dataset_family": "OPS-SAT",
-                    "record_level": (
-                        "segment_features"
-                    ),
+                    "record_level": ("segment_features"),
                     "channel": channel,
-                    "start_segment": (
-                        start_segment
-                    ),
-                    "end_segment": (
-                        end_segment
-                    ),
-                    "segment_ids": (
-                        segment_ids
-                    ),
-                    "sample_indexes": (
-                        sample_indexes
-                    ),
-                    "peak_sample_index": int(
-                        peak_source_record[
-                            "sample_index"
-                        ]
-                    ),
-                    "grouping_strategy": (
-                        "same_channel_nearby_"
-                        "sample_indexes"
-                    ),
-                    "max_sample_gap": (
-                        max_incident_sample_gap
-                    ),
+                    "start_segment": (start_segment),
+                    "end_segment": (end_segment),
+                    "segment_ids": (segment_ids),
+                    "sample_indexes": (sample_indexes),
+                    "peak_sample_index": int(peak_source_record["sample_index"]),
+                    "grouping_strategy": ("same_channel_nearby_sample_indexes"),
+                    "max_sample_gap": (max_incident_sample_gap),
                 },
             )
 
@@ -1542,17 +1124,9 @@ def run_real_opssat_analysis(
                 }
             )
 
-        total_incidents = len(
-            incident_groups
-        )
+        total_incidents = len(incident_groups)
 
-        hybrid_scores = (
-            prediction_frame[
-                "hybrid_score"
-            ]
-            .astype(float)
-            .tolist()
-        )
+        hybrid_scores = prediction_frame["hybrid_score"].astype(float).tolist()
 
         mean_risk_score = float(
             sum(hybrid_scores)
@@ -1569,12 +1143,9 @@ def run_real_opssat_analysis(
             )
         )
 
-        anomaly_rate = (
-            prediction_result.anomaly_predictions
-            / max(
-                prediction_result.stored_predictions,
-                1,
-            )
+        anomaly_rate = prediction_result.anomaly_predictions / max(
+            prediction_result.stored_predictions,
+            1,
         )
 
         mission_health = calculate_mission_health_score(
@@ -1584,39 +1155,18 @@ def run_real_opssat_analysis(
 
         complete_analysis_run(
             analysis_run_id=analysis_run_id,
-            total_predictions=(
-                prediction_result
-                .stored_predictions
-            ),
-            total_anomalies=(
-                prediction_result
-                .anomaly_predictions
-            ),
-            total_incidents=(
-                total_incidents
-            ),
-            mission_health_score=float(
-                mission_health["score"]
-            ),
+            total_predictions=(prediction_result.stored_predictions),
+            total_anomalies=(prediction_result.anomaly_predictions),
+            total_incidents=(total_incidents),
+            mission_health_score=float(mission_health["score"]),
             metadata={
                 **base_run_metadata,
-                "total_input_rows": len(
-                    inference_frame
-                ),
+                "total_input_rows": len(inference_frame),
                 "anomaly_rate": anomaly_rate,
-                "mean_hybrid_score": (
-                    mean_risk_score
-                ),
-                "maximum_hybrid_score": (
-                    maximum_risk_score
-                ),
-                "incident_strategy": (
-                    "same_channel_nearby_"
-                    "sample_indexes"
-                ),
-                "max_incident_sample_gap": (
-                    max_incident_sample_gap
-                ),
+                "mean_hybrid_score": (mean_risk_score),
+                "maximum_hybrid_score": (maximum_risk_score),
+                "incident_strategy": ("same_channel_nearby_sample_indexes"),
+                "max_incident_sample_gap": (max_incident_sample_gap),
                 "ground_truth_used_for_inference": False,
                 "mission_health": mission_health,
             },
@@ -1625,37 +1175,18 @@ def run_real_opssat_analysis(
     except Exception as error:
         fail_analysis_run(
             analysis_run_id=analysis_run_id,
-            error_message=(
-                f"{type(error).__name__}: "
-                f"{error}"
-            ),
+            error_message=(f"{type(error).__name__}: {error}"),
         )
 
         raise
 
     return OpsSatAnalysisResult(
         analysis_run_id=analysis_run_id,
-        total_predictions=(
-            prediction_result
-            .stored_predictions
-        ),
-        total_anomalies=(
-            prediction_result
-            .anomaly_predictions
-        ),
-        total_incidents=(
-            total_incidents
-        ),
-        mean_risk_score=(
-            mean_risk_score
-        ),
-        maximum_risk_score=(
-            maximum_risk_score
-        ),
-        mission_health_score=float(
-            mission_health["score"]
-        ),
-        mission_health_status=str(
-            mission_health["status"]
-        ),
+        total_predictions=(prediction_result.stored_predictions),
+        total_anomalies=(prediction_result.anomaly_predictions),
+        total_incidents=(total_incidents),
+        mean_risk_score=(mean_risk_score),
+        maximum_risk_score=(maximum_risk_score),
+        mission_health_score=float(mission_health["score"]),
+        mission_health_status=str(mission_health["status"]),
     )

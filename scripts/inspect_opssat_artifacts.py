@@ -21,28 +21,14 @@ from src.opssat import (
     predict_feature_rows,
 )
 
-MODELS_DIRECTORY = (
-    PROJECT_ROOT
-    / "models"
-)
+MODELS_DIRECTORY = PROJECT_ROOT / "models"
 
-FEATURES_FILE = (
-    PROJECT_ROOT
-    / "data"
-    / "opssat"
-    / "processed"
-    / "validation_features.csv"
-)
+FEATURES_FILE = PROJECT_ROOT / "data" / "opssat" / "processed" / "validation_features.csv"
 
 ARTIFACT_PATHS = (
-    MODELS_DIRECTORY
-    / "opssat_model.joblib",
-
-    MODELS_DIRECTORY
-    / "opssat_isolation_bundle.joblib",
-
-    MODELS_DIRECTORY
-    / "opssat_supervised_bundle.joblib",
+    MODELS_DIRECTORY / "opssat_model.joblib",
+    MODELS_DIRECTORY / "opssat_isolation_bundle.joblib",
+    MODELS_DIRECTORY / "opssat_supervised_bundle.joblib",
 )
 
 
@@ -56,14 +42,9 @@ def print_dataframe(
 
     print(f"\n{label}:")
 
-    print(
-        f"- Rows: {len(dataframe)}"
-    )
+    print(f"- Rows: {len(dataframe)}")
 
-    print(
-        f"- Columns: "
-        f"{list(dataframe.columns)}"
-    )
+    print(f"- Columns: {list(dataframe.columns)}")
 
     if not dataframe.empty:
         print("\nPreview:")
@@ -74,11 +55,7 @@ def print_dataframe(
             "display.width",
             220,
         ):
-            print(
-                dataframe
-                .head(5)
-                .to_string(index=False)
-            )
+            print(dataframe.head(5).to_string(index=False))
 
 
 def print_result(
@@ -89,10 +66,7 @@ def print_result(
     Print an inference result without assuming its type.
     """
 
-    print(
-        f"\n{label} type: "
-        f"{type(result).__name__}"
-    )
+    print(f"\n{label} type: {type(result).__name__}")
 
     if isinstance(
         result,
@@ -109,17 +83,11 @@ def print_result(
         result,
         pd.Series,
     ):
-        print(
-            f"- Name: {result.name!r}"
-        )
+        print(f"- Name: {result.name!r}")
 
-        print(
-            f"- Length: {len(result)}"
-        )
+        print(f"- Length: {len(result)}")
 
-        print(
-            result.head(5).to_string()
-        )
+        print(result.head(5).to_string())
 
         return
 
@@ -127,9 +95,7 @@ def print_result(
         result,
         tuple,
     ):
-        print(
-            f"- Tuple items: {len(result)}"
-        )
+        print(f"- Tuple items: {len(result)}")
 
         for index, item in enumerate(
             result,
@@ -146,21 +112,14 @@ def print_result(
         result,
         dict,
     ):
-        print(
-            f"- Keys: {list(result.keys())}"
-        )
+        print(f"- Keys: {list(result.keys())}")
 
         for key, value in result.items():
-            print(
-                f"- {key!r}: "
-                f"type={type(value).__name__}"
-            )
+            print(f"- {key!r}: type={type(value).__name__}")
 
         return
 
-    print(
-        f"- Value: {result!r}"
-    )
+    print(f"- Value: {result!r}")
 
 
 def inspect_artifact(
@@ -172,59 +131,33 @@ def inspect_artifact(
     """
 
     print("\n" + "=" * 90)
-    print(
-        f"ARTIFACT: {artifact_path.name}"
-    )
+    print(f"ARTIFACT: {artifact_path.name}")
     print("=" * 90)
 
     if not artifact_path.exists():
-        print(
-            f"ERROR: File does not exist: "
-            f"{artifact_path}"
-        )
+        print(f"ERROR: File does not exist: {artifact_path}")
 
         return
 
-    print(
-        f"Path: {artifact_path}"
-    )
+    print(f"Path: {artifact_path}")
 
-    print(
-        f"Size: "
-        f"{artifact_path.stat().st_size} bytes"
-    )
+    print(f"Size: {artifact_path.stat().st_size} bytes")
 
     try:
-        artifact = load_artifact(
-            artifact_path
-        )
+        artifact = load_artifact(artifact_path)
 
     except Exception as error:
-        print(
-            "This file was rejected by "
-            "load_artifact()."
-        )
+        print("This file was rejected by load_artifact().")
 
-        print(
-            f"Error type: "
-            f"{type(error).__name__}"
-        )
+        print(f"Error type: {type(error).__name__}")
 
-        print(
-            f"Error message: "
-            f"{error}"
-        )
+        print(f"Error message: {error}")
 
         return
 
-    print(
-        "\nArtifact accepted by load_artifact()."
-    )
+    print("\nArtifact accepted by load_artifact().")
 
-    print(
-        f"Keys: "
-        f"{sorted(artifact.keys())}"
-    )
+    print(f"Keys: {sorted(artifact.keys())}")
 
     numeric_features = artifact.get(
         "numeric_features",
@@ -241,39 +174,19 @@ def inspect_artifact(
         [],
     )
 
-    print(
-        "\nCore artifact information:"
-    )
+    print("\nCore artifact information:")
 
-    print(
-        f"- Isolation model type: "
-        f"{type(artifact.get('isolation_model')).__name__}"
-    )
+    print(f"- Isolation model type: {type(artifact.get('isolation_model')).__name__}")
 
-    print(
-        f"- Supervised model type: "
-        f"{type(artifact.get('supervised_model')).__name__}"
-    )
+    print(f"- Supervised model type: {type(artifact.get('supervised_model')).__name__}")
 
-    print(
-        f"- Numeric features: "
-        f"{list(numeric_features)}"
-    )
+    print(f"- Numeric features: {list(numeric_features)}")
 
-    print(
-        f"- Numeric feature count: "
-        f"{len(numeric_features)}"
-    )
+    print(f"- Numeric feature count: {len(numeric_features)}")
 
-    print(
-        f"- Thresholds: "
-        f"{thresholds!r}"
-    )
+    print(f"- Thresholds: {thresholds!r}")
 
-    print(
-        f"- Trained channel count: "
-        f"{len(channels)}"
-    )
+    print(f"- Trained channel count: {len(channels)}")
 
     missing_features = [
         feature_name
@@ -282,57 +195,33 @@ def inspect_artifact(
     ]
 
     if missing_features:
-        print(
-            "\nERROR: Validation dataset is missing "
-            "model features:"
-        )
+        print("\nERROR: Validation dataset is missing model features:")
 
         for feature_name in missing_features:
-            print(
-                f"- {feature_name}"
-            )
+            print(f"- {feature_name}")
 
         return
 
-    sample_frame = (
-        feature_frame
-        .head(5)
-        .copy()
-    )
+    sample_frame = feature_frame.head(5).copy()
 
-    print(
-        "\nRunning predict_feature_rows() "
-        "on the first five rows..."
-    )
+    print("\nRunning predict_feature_rows() on the first five rows...")
 
     try:
-        prediction_result = (
-            predict_feature_rows(
-                sample_frame,
-                artifact,
-            )
+        prediction_result = predict_feature_rows(
+            sample_frame,
+            artifact,
         )
 
     except Exception as error:
-        print(
-            "Inference failed."
-        )
+        print("Inference failed.")
 
-        print(
-            f"Error type: "
-            f"{type(error).__name__}"
-        )
+        print(f"Error type: {type(error).__name__}")
 
-        print(
-            f"Error message: "
-            f"{error}"
-        )
+        print(f"Error message: {error}")
 
         return
 
-    print_result(
-        prediction_result
-    )
+    print_result(prediction_result)
 
 
 def main() -> None:
@@ -340,31 +229,16 @@ def main() -> None:
     print("MissionGuard OPS-SAT Artifact Inspection")
     print("=" * 90)
 
-    print(
-        "\npredict_feature_rows signature:"
-    )
+    print("\npredict_feature_rows signature:")
 
-    print(
-        inspect.signature(
-            predict_feature_rows
-        )
-    )
+    print(inspect.signature(predict_feature_rows))
 
-    print(
-        "\nload_artifact signature:"
-    )
+    print("\nload_artifact signature:")
 
-    print(
-        inspect.signature(
-            load_artifact
-        )
-    )
+    print(inspect.signature(load_artifact))
 
     if not FEATURES_FILE.exists():
-        raise FileNotFoundError(
-            "OPS-SAT validation feature file "
-            f"was not found: {FEATURES_FILE}"
-        )
+        raise FileNotFoundError(f"OPS-SAT validation feature file was not found: {FEATURES_FILE}")
 
     feature_frame = pd.read_csv(
         FEATURES_FILE,

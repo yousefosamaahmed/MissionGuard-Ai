@@ -18,9 +18,7 @@ def find_csv_files() -> list[Path]:
     if not data_directory.exists():
         return []
 
-    return sorted(
-        data_directory.rglob("*.csv")
-    )
+    return sorted(data_directory.rglob("*.csv"))
 
 
 def inspect_csv(file_path: Path) -> None:
@@ -29,14 +27,10 @@ def inspect_csv(file_path: Path) -> None:
     """
 
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"CSV file does not exist: {file_path}"
-        )
+        raise FileNotFoundError(f"CSV file does not exist: {file_path}")
 
     if file_path.suffix.lower() != ".csv":
-        raise ValueError(
-            "The selected file must be a CSV file."
-        )
+        raise ValueError("The selected file must be a CSV file.")
 
     dataframe = pd.read_csv(
         file_path,
@@ -58,55 +52,35 @@ def inspect_csv(file_path: Path) -> None:
         dataframe.columns,
         start=1,
     ):
-        print(
-            f"{index}. {column_name!r}"
-        )
+        print(f"{index}. {column_name!r}")
 
     print("\nData types:")
 
     for column_name, data_type in dataframe.dtypes.items():
-        print(
-            f"- {column_name!r}: {data_type}"
-        )
+        print(f"- {column_name!r}: {data_type}")
 
     print("\nMissing values:")
 
-    missing_values = (
-        dataframe
-        .isna()
-        .sum()
-        .sort_values(
-            ascending=False
-        )
-    )
+    missing_values = dataframe.isna().sum().sort_values(ascending=False)
 
     missing_values_found = False
 
     for column_name, missing_count in missing_values.items():
-        missing_count_value = int(
-            missing_count
-        )
+        missing_count_value = int(missing_count)
 
         if missing_count_value > 0:
             missing_values_found = True
 
-            print(
-                f"- {column_name!r}: "
-                f"{missing_count_value}"
-            )
+            print(f"- {column_name!r}: {missing_count_value}")
 
     if not missing_values_found:
         print("- No missing values detected.")
 
     print("\nDuplicate rows:")
 
-    duplicate_rows = int(
-        dataframe.duplicated().sum()
-    )
+    duplicate_rows = int(dataframe.duplicated().sum())
 
-    print(
-        f"- {duplicate_rows}"
-    )
+    print(f"- {duplicate_rows}")
 
     print("\nFirst 5 rows:")
 
@@ -116,17 +90,11 @@ def inspect_csv(file_path: Path) -> None:
         "display.width",
         200,
     ):
-        print(
-            dataframe.head(5).to_string(
-                index=False
-            )
-        )
+        print(dataframe.head(5).to_string(index=False))
 
     print("\nNumeric statistics:")
 
-    numeric_dataframe = dataframe.select_dtypes(
-        include="number"
-    )
+    numeric_dataframe = dataframe.select_dtypes(include="number")
 
     if numeric_dataframe.empty:
         print("- No numeric columns detected.")
@@ -138,19 +106,11 @@ def inspect_csv(file_path: Path) -> None:
             "display.width",
             200,
         ):
-            print(
-                numeric_dataframe
-                .describe()
-                .transpose()
-                .to_string()
-            )
+            print(numeric_dataframe.describe().transpose().to_string())
 
     print("\nPossible special columns:")
 
-    lowered_columns = {
-        str(column).lower(): str(column)
-        for column in dataframe.columns
-    }
+    lowered_columns = {str(column).lower(): str(column) for column in dataframe.columns}
 
     timestamp_candidates = [
         "timestamp",
@@ -202,20 +162,11 @@ def inspect_csv(file_path: Path) -> None:
         None,
     )
 
-    print(
-        f"- Timestamp column: "
-        f"{detected_timestamp!r}"
-    )
+    print(f"- Timestamp column: {detected_timestamp!r}")
 
-    print(
-        f"- Label column: "
-        f"{detected_label!r}"
-    )
+    print(f"- Label column: {detected_label!r}")
 
-    print(
-        f"- Anomaly type column: "
-        f"{detected_anomaly_type!r}"
-    )
+    print(f"- Anomaly type column: {detected_anomaly_type!r}")
 
     print("\nInspection completed.")
 
@@ -229,18 +180,13 @@ def main() -> None:
         print("=" * 80)
 
         if not csv_files:
-            print(
-                "No CSV files were found inside "
-                f"{PROJECT_ROOT / 'data'}"
-            )
+            print(f"No CSV files were found inside {PROJECT_ROOT / 'data'}")
+
+            print("\nRun the script with a file path:")
 
             print(
-                "\nRun the script with a file path:"
-            )
-
-            print(
-                r'.\.venv\Scripts\python.exe '
-                r'scripts\inspect_csv_dataset.py '
+                r".\.venv\Scripts\python.exe "
+                r"scripts\inspect_csv_dataset.py "
                 r'"path\to\file.csv"'
             )
 
@@ -250,33 +196,20 @@ def main() -> None:
             csv_files,
             start=1,
         ):
-            relative_path = csv_file.relative_to(
-                PROJECT_ROOT
-            )
+            relative_path = csv_file.relative_to(PROJECT_ROOT)
 
-            print(
-                f"{file_number}. {relative_path}"
-            )
+            print(f"{file_number}. {relative_path}")
 
-        print(
-            "\nRun the script again with one file path."
-        )
+        print("\nRun the script again with one file path.")
 
         return
 
-    supplied_path = Path(
-        sys.argv[1]
-    )
+    supplied_path = Path(sys.argv[1])
 
     if not supplied_path.is_absolute():
-        supplied_path = (
-            PROJECT_ROOT
-            / supplied_path
-        )
+        supplied_path = PROJECT_ROOT / supplied_path
 
-    inspect_csv(
-        supplied_path.resolve()
-    )
+    inspect_csv(supplied_path.resolve())
 
 
 if __name__ == "__main__":

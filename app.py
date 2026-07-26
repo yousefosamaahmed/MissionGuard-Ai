@@ -149,16 +149,16 @@ st.markdown(
 <style>
 :root {{
   color-scheme: {appearance_mode.lower()};
-  --mg-bg: {theme['background']};
-  --mg-sidebar: {theme['sidebar']};
-  --mg-surface: {theme['surface']};
-  --mg-surface-alt: {theme['surface_alt']};
-  --mg-text: {theme['text']};
-  --mg-muted: {theme['muted']};
-  --mg-border: {theme['border']};
-  --mg-primary: {theme['primary']};
-  --mg-code-bg: {theme['code_background']};
-  --mg-code-text: {theme['code_text']};
+  --mg-bg: {theme["background"]};
+  --mg-sidebar: {theme["sidebar"]};
+  --mg-surface: {theme["surface"]};
+  --mg-surface-alt: {theme["surface_alt"]};
+  --mg-text: {theme["text"]};
+  --mg-muted: {theme["muted"]};
+  --mg-border: {theme["border"]};
+  --mg-primary: {theme["primary"]};
+  --mg-code-bg: {theme["code_background"]};
+  --mg-code-text: {theme["code_text"]};
 }}
 
 html,
@@ -380,7 +380,7 @@ pre *,
 .hero {{
   padding: 26px 30px;
   border-radius: 22px;
-  background: linear-gradient(120deg, {theme['hero_start']}, {theme['hero_end']});
+  background: linear-gradient(120deg, {theme["hero_start"]}, {theme["hero_end"]});
   margin-bottom: 20px;
   box-shadow: 0 12px 30px rgba(4,12,28,0.16);
 }}
@@ -474,8 +474,8 @@ st.markdown(
     f"""
 <style>
 :root {{
-  --astra-ink: {theme['text']};
-  --astra-paper: {theme['surface']};
+  --astra-ink: {theme["text"]};
+  --astra-paper: {theme["surface"]};
   --astra-inverse: {astra_inverse_surface};
   --astra-inverse-text: {astra_inverse_text};
   --astra-button-fg: {astra_button_foreground};
@@ -1307,11 +1307,7 @@ def style_figure(figure: go.Figure) -> go.Figure:
     default_height = 520 if trace_count > 1 else 460
 
     figure.update_layout(
-        template=(
-            "plotly_dark"
-            if appearance_mode == "Dark"
-            else "plotly_white"
-        ),
+        template=("plotly_dark" if appearance_mode == "Dark" else "plotly_white"),
         paper_bgcolor=theme["surface"],
         plot_bgcolor=theme["surface"],
         height=figure.layout.height or default_height,
@@ -1383,7 +1379,6 @@ def show_chart(figure: go.Figure) -> None:
     st.plotly_chart(
         style_figure(figure),
         **stretch_width_kwargs(st.plotly_chart),
-
         # Disable Streamlit's native Plotly theme. The app
         # already applies its own Dark/Light theme above.
         # Leaving the Streamlit theme enabled can reapply
@@ -1409,7 +1404,9 @@ def risk_color(level: str) -> str:
 @st.cache_resource
 def load_model_artifact() -> dict:
     if not MODEL_PATH.exists():
-        raise FileNotFoundError("Run `python scripts/train_opssat.py` to create the OPSSAT model artifact.")
+        raise FileNotFoundError(
+            "Run `python scripts/train_opssat.py` to create the OPSSAT model artifact."
+        )
     return load_artifact(MODEL_PATH)
 
 
@@ -1436,9 +1433,7 @@ def load_database_status() -> dict[str, object]:
             "database_name": database_info["database_name"],
             "schema_name": database_info["configured_schema"],
             "table_count": database_info["table_count"],
-            "missing_required_tables": database_info[
-                "missing_required_tables"
-            ],
+            "missing_required_tables": database_info["missing_required_tables"],
             "error": None,
         }
     except Exception as exc:
@@ -1486,8 +1481,11 @@ def load_official_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.D
     segments["timestamp"] = pd.to_datetime(segments["timestamp"], errors="coerce", utc=True)
     predictions = pd.read_csv(PREDICTIONS_PATH)
     metrics = pd.read_csv(METRICS_PATH)
-    metadata = json.loads(METADATA_PATH.read_text(encoding="utf-8")) if METADATA_PATH.exists() else {}
+    metadata = (
+        json.loads(METADATA_PATH.read_text(encoding="utf-8")) if METADATA_PATH.exists() else {}
+    )
     return dataset, segments, predictions, metrics, metadata
+
 
 def to_uuid(value: object) -> UUID:
     """
@@ -1508,18 +1506,10 @@ def find_latest_opssat_session_id() -> UUID:
     sessions = list_telemetry_sessions()
 
     for telemetry_session in sessions:
-        if (
-            telemetry_session.get("source_type")
-            == "opssat"
-        ):
-            return to_uuid(
-                telemetry_session["id"]
-            )
+        if telemetry_session.get("source_type") == "opssat":
+            return to_uuid(telemetry_session["id"])
 
-    raise RuntimeError(
-        "No OPS-SAT telemetry session was found "
-        "in PostgreSQL."
-    )
+    raise RuntimeError("No OPS-SAT telemetry session was found in PostgreSQL.")
 
 
 def find_hybrid_model_version_id() -> UUID:
@@ -1530,19 +1520,10 @@ def find_hybrid_model_version_id() -> UUID:
     models = list_model_versions()
 
     for model in models:
-        if (
-            model.get("model_name")
-            == "OPSSAT Hybrid"
-            and model.get("version") == "1.0"
-        ):
-            return to_uuid(
-                model["id"]
-            )
+        if model.get("model_name") == "OPSSAT Hybrid" and model.get("version") == "1.0":
+            return to_uuid(model["id"])
 
-    raise RuntimeError(
-        "OPSSAT Hybrid version 1.0 was not found "
-        "in PostgreSQL."
-    )
+    raise RuntimeError("OPSSAT Hybrid version 1.0 was not found in PostgreSQL.")
 
 
 def find_latest_completed_opssat_analysis(
@@ -1569,15 +1550,11 @@ def find_latest_completed_opssat_analysis(
         }:
             continue
 
-        telemetry_session_id = to_uuid(
-            telemetry_session["id"]
-        )
+        telemetry_session_id = to_uuid(telemetry_session["id"])
 
-        latest_run = (
-            get_latest_completed_analysis_run(
-                session_id=telemetry_session_id,
-                model_version_id=model_version_id,
-            )
+        latest_run = get_latest_completed_analysis_run(
+            session_id=telemetry_session_id,
+            model_version_id=model_version_id,
         )
 
         if latest_run is not None:
@@ -1590,7 +1567,6 @@ def find_latest_completed_opssat_analysis(
 
 
 def initialize_database_analysis_state() -> None:
-    
     """
     Initialize Streamlit session state.
     """
@@ -1619,7 +1595,6 @@ def initialize_database_analysis_state() -> None:
             st.session_state[key] = default_value
 
 
-
 def _json_dictionary(
     value: object,
 ) -> dict[str, object]:
@@ -1628,10 +1603,7 @@ def _json_dictionary(
     """
 
     if isinstance(value, dict):
-        return {
-            str(key): item
-            for key, item in value.items()
-        }
+        return {str(key): item for key, item in value.items()}
 
     return {}
 
@@ -1647,36 +1619,22 @@ def build_database_analysis_frame(
     rows: list[dict[str, object]] = []
 
     for record in prediction_records:
-        sample_metadata = _json_dictionary(
-            record.get("sample_metadata")
-        )
+        sample_metadata = _json_dictionary(record.get("sample_metadata"))
 
-        feature_values = _json_dictionary(
-            record.get("feature_values")
-        )
+        feature_values = _json_dictionary(record.get("feature_values"))
 
-        prediction_metadata = _json_dictionary(
-            record.get("prediction_metadata")
-        )
+        prediction_metadata = _json_dictionary(record.get("prediction_metadata"))
 
-        feature_contributions = _json_dictionary(
-            record.get("feature_contributions")
-        )
+        feature_contributions = _json_dictionary(record.get("feature_contributions"))
 
-        predicted_anomaly = bool(
-            record.get("predicted_anomaly", False)
-        )
+        predicted_anomaly = bool(record.get("predicted_anomaly", False))
 
-        ground_truth_value = record.get(
-            "ground_truth_label"
-        )
+        ground_truth_value = record.get("ground_truth_label")
 
         ground_truth_label: float = float("nan")
 
         if ground_truth_value is not None:
-            ground_truth_label = float(
-                bool(ground_truth_value)
-            )
+            ground_truth_label = float(bool(ground_truth_value))
 
         segment_value = sample_metadata.get(
             "segment",
@@ -1702,11 +1660,7 @@ def build_database_analysis_frame(
             "prediction_label": str(
                 prediction_metadata.get(
                     "prediction_label",
-                    (
-                        "Anomaly"
-                        if predicted_anomaly
-                        else "Normal"
-                    ),
+                    ("Anomaly" if predicted_anomaly else "Normal"),
                 )
             ),
             "risk_level": str(
@@ -1761,9 +1715,7 @@ def build_database_analysis_frame(
                     0.0,
                 )
             ),
-            "feature_contributions": (
-                feature_contributions
-            ),
+            "feature_contributions": (feature_contributions),
             "explanation": str(
                 record.get(
                     "explanation",
@@ -1782,12 +1734,8 @@ def build_database_analysis_frame(
                     0,
                 )
             ),
-            "timestamp": record.get(
-                "timestamp"
-            ),
-            "segment_identifier": record.get(
-                "segment_identifier"
-            ),
+            "timestamp": record.get("timestamp"),
+            "segment_identifier": record.get("segment_identifier"),
             "human_review_required": bool(
                 record.get(
                     "human_review_required",
@@ -1802,17 +1750,11 @@ def build_database_analysis_frame(
             ),
         }
 
-        row.update(
-            feature_values
-        )
+        row.update(feature_values)
 
-        rows.append(
-            row
-        )
+        rows.append(row)
 
-    dataframe = pd.DataFrame(
-        rows
-    )
+    dataframe = pd.DataFrame(rows)
 
     if dataframe.empty:
         return dataframe
@@ -1838,55 +1780,33 @@ def load_database_analysis_details(
     context into Streamlit session state.
     """
 
-    prediction_records = (
-        list_analysis_prediction_records(
-            analysis_run_id=analysis_run_id,
-            schema_name=(
-                "opssat_segment_features"
-            ),
-        )
+    prediction_records = list_analysis_prediction_records(
+        analysis_run_id=analysis_run_id,
+        schema_name=("opssat_segment_features"),
     )
 
-    incident_records = list_incidents(
-        analysis_run_id
-    )
+    incident_records = list_incidents(analysis_run_id)
 
-    st.session_state[
-        "opssat_database_analysis_frame"
-    ] = build_database_analysis_frame(
+    st.session_state["opssat_database_analysis_frame"] = build_database_analysis_frame(
         prediction_records
     )
 
-    st.session_state[
-        "opssat_database_incidents"
-    ] = incident_records
+    st.session_state["opssat_database_incidents"] = incident_records
 
-    st.session_state[
-        "opssat_database_raw_view"
-    ] = None
+    st.session_state["opssat_database_raw_view"] = None
 
-    st.session_state[
-        "opssat_database_source_type"
-    ] = None
+    st.session_state["opssat_database_source_type"] = None
 
-    st.session_state[
-        "opssat_database_source_file_name"
-    ] = None
+    st.session_state["opssat_database_source_file_name"] = None
 
-    analysis_run = get_analysis_run(
-        analysis_run_id
-    )
+    analysis_run = get_analysis_run(analysis_run_id)
 
     if analysis_run is None:
         return
 
-    telemetry_session_id = to_uuid(
-        analysis_run["session_id"]
-    )
+    telemetry_session_id = to_uuid(analysis_run["session_id"])
 
-    telemetry_session = get_telemetry_session(
-        telemetry_session_id
-    )
+    telemetry_session = get_telemetry_session(telemetry_session_id)
 
     if telemetry_session is None:
         return
@@ -1898,77 +1818,58 @@ def load_database_analysis_details(
         )
     )
 
-    source_file_name = telemetry_session.get(
-        "source_file_name"
-    )
+    source_file_name = telemetry_session.get("source_file_name")
 
-    st.session_state[
-        "opssat_database_source_type"
-    ] = source_type
+    st.session_state["opssat_database_source_type"] = source_type
 
-    st.session_state[
-        "opssat_database_source_file_name"
-    ] = (
-        str(source_file_name)
-        if source_file_name
-        else None
+    st.session_state["opssat_database_source_file_name"] = (
+        str(source_file_name) if source_file_name else None
     )
 
     if source_type != "uploaded_csv":
         return
 
-    session_metadata = _json_dictionary(
-        telemetry_session.get(
-            "metadata"
+    session_metadata = _json_dictionary(telemetry_session.get("metadata"))
+
+    raw_file_path_value = session_metadata.get("raw_file_path")
+
+    if (
+        not isinstance(
+            raw_file_path_value,
+            str,
         )
-    )
-
-    raw_file_path_value = session_metadata.get(
-        "raw_file_path"
-    )
-
-    if not isinstance(
-        raw_file_path_value,
-        str,
-    ) or not raw_file_path_value.strip():
+        or not raw_file_path_value.strip()
+    ):
         return
 
-    raw_file_path = Path(
-        raw_file_path_value
-    )
+    raw_file_path = Path(raw_file_path_value)
 
     if not raw_file_path.is_absolute():
-        raw_file_path = (
-            PROJECT_ROOT
-            / raw_file_path
-        )
+        raw_file_path = PROJECT_ROOT / raw_file_path
 
     if not raw_file_path.exists():
         return
 
     try:
-        persisted_upload = pd.read_csv(
-            raw_file_path
-        )
+        persisted_upload = pd.read_csv(raw_file_path)
 
         (
             _,
             persisted_raw_view,
             _,
-        ) = detect_and_prepare_upload(
-            persisted_upload
-        )
+        ) = detect_and_prepare_upload(persisted_upload)
 
     except Exception:
         return
 
-    if isinstance(
-        persisted_raw_view,
-        pd.DataFrame,
-    ) and not persisted_raw_view.empty:
-        st.session_state[
-            "opssat_database_raw_view"
-        ] = persisted_raw_view.copy()
+    if (
+        isinstance(
+            persisted_raw_view,
+            pd.DataFrame,
+        )
+        and not persisted_raw_view.empty
+    ):
+        st.session_state["opssat_database_raw_view"] = persisted_raw_view.copy()
 
 
 def hydrate_latest_database_analysis() -> None:
@@ -1977,111 +1878,52 @@ def hydrate_latest_database_analysis() -> None:
     OPS-SAT analysis from PostgreSQL.
     """
 
-    if bool(
-        st.session_state[
-            "opssat_analysis_hydrated"
-        ]
-    ):
+    if bool(st.session_state["opssat_analysis_hydrated"]):
         return
 
-    st.session_state[
-        "opssat_analysis_hydrated"
-    ] = True
+    st.session_state["opssat_analysis_hydrated"] = True
 
     try:
-        model_version_id = (
-            find_hybrid_model_version_id()
-        )
+        model_version_id = find_hybrid_model_version_id()
 
-        latest_context = (
-            find_latest_completed_opssat_analysis(
-                model_version_id
-            )
-        )
+        latest_context = find_latest_completed_opssat_analysis(model_version_id)
 
         if latest_context is None:
             return
 
         _, latest_run = latest_context
 
-        analysis_run_id = to_uuid(
-            latest_run["id"]
-        )
+        analysis_run_id = to_uuid(latest_run["id"])
 
-        prediction_summary = (
-            get_prediction_risk_summary(
-                analysis_run_id
-            )
-        )
+        prediction_summary = get_prediction_risk_summary(analysis_run_id)
 
-        load_database_analysis_details(
-            analysis_run_id
-        )
+        load_database_analysis_details(analysis_run_id)
 
-        st.session_state[
-            "opssat_analysis_run_id"
-        ] = str(
-            analysis_run_id
-        )
+        st.session_state["opssat_analysis_run_id"] = str(analysis_run_id)
 
-        st.session_state[
-            "opssat_analysis_result"
-        ] = {
-            "analysis_run_id": str(
-                analysis_run_id
-            ),
-            "total_predictions": int(
-                prediction_summary[
-                    "total_predictions"
-                ]
-            ),
-            "total_anomalies": int(
-                prediction_summary[
-                    "total_anomalies"
-                ]
-            ),
-            "total_incidents": int(
-                latest_run[
-                    "total_incidents"
-                ]
-            ),
-            "mean_risk_score": float(
-                prediction_summary[
-                    "mean_risk_score"
-                ]
-            ),
-            "maximum_risk_score": float(
-                prediction_summary[
-                    "maximum_risk_score"
-                ]
-            ),
+        st.session_state["opssat_analysis_result"] = {
+            "analysis_run_id": str(analysis_run_id),
+            "total_predictions": int(prediction_summary["total_predictions"]),
+            "total_anomalies": int(prediction_summary["total_anomalies"]),
+            "total_incidents": int(latest_run["total_incidents"]),
+            "mean_risk_score": float(prediction_summary["mean_risk_score"]),
+            "maximum_risk_score": float(prediction_summary["maximum_risk_score"]),
             "mission_health_score": (
                 float(latest_run["mission_health_score"])
-                if latest_run.get("mission_health_score")
-                is not None
+                if latest_run.get("mission_health_score") is not None
                 else None
             ),
         }
 
-        st.session_state[
-            "opssat_analysis_completed"
-        ] = True
+        st.session_state["opssat_analysis_completed"] = True
 
-        st.session_state[
-            "opssat_analysis_restored"
-        ] = True
+        st.session_state["opssat_analysis_restored"] = True
 
-        st.session_state[
-            "opssat_analysis_error"
-        ] = None
+        st.session_state["opssat_analysis_error"] = None
 
     except Exception as exc:
-        st.session_state[
-            "opssat_analysis_error"
-        ] = (
-            "Could not restore the latest "
-            "PostgreSQL analysis: "
-            f"{type(exc).__name__}: {exc}"
+        st.session_state["opssat_analysis_error"] = (
+            f"Could not restore the latest PostgreSQL analysis: {type(exc).__name__}: {exc}"
         )
 
 
@@ -2503,7 +2345,13 @@ st.markdown(
 
 try:
     artifact = load_model_artifact()
-    official_dataset, official_segments, official_predictions, official_metrics, official_metadata = load_official_data()
+    (
+        official_dataset,
+        official_segments,
+        official_predictions,
+        official_metrics,
+        official_metadata,
+    ) = load_official_data()
 except Exception as exc:
     st.error(str(exc))
     st.stop()
@@ -2522,10 +2370,7 @@ with st.sidebar.expander("PostgreSQL / pgAdmin", expanded=True):
         missing_tables = database_status["missing_required_tables"]
 
         if isinstance(missing_tables, list) and missing_tables:
-            st.warning(
-                "PostgreSQL is connected, but the MissionGuard schema "
-                "is incomplete."
-            )
+            st.warning("PostgreSQL is connected, but the MissionGuard schema is incomplete.")
             st.caption("Missing tables: " + ", ".join(missing_tables))
         else:
             st.success("PostgreSQL connected")
@@ -2542,9 +2387,7 @@ with st.sidebar.expander("PostgreSQL / pgAdmin", expanded=True):
             f"[Open pgAdmin]({pgadmin_details['url']})",
             unsafe_allow_html=False,
         )
-        st.caption(
-            "pgAdmin login: " + pgadmin_details["email"]
-        )
+        st.caption("pgAdmin login: " + pgadmin_details["email"])
         st.caption(
             "Registered server: "
             + pgadmin_details["server_name"]
@@ -2558,22 +2401,17 @@ with st.sidebar.expander("PostgreSQL / pgAdmin", expanded=True):
             + pgadmin_details["username"]
         )
         st.caption(
-            "Use the PostgreSQL password stored locally in .env. "
-            "Do not upload .env to GitHub."
+            "Use the PostgreSQL password stored locally in .env. Do not upload .env to GitHub."
         )
     elif bool(database_status.get("enabled")):
         st.warning("PostgreSQL is configured but unavailable")
         st.caption(str(database_status["error"]))
-        st.caption(
-            "Start the full stack with START_DOCKER_WINDOWS.bat, "
-            "then refresh this status."
-        )
+        st.caption("Start the full stack with START_DOCKER_WINDOWS.bat, then refresh this status.")
     else:
         st.info("Local analysis mode")
         st.caption(str(database_status["error"]))
         st.caption(
-            "For PostgreSQL and pgAdmin, close this local run and use "
-            "START_DOCKER_WINDOWS.bat."
+            "For PostgreSQL and pgAdmin, close this local run and use START_DOCKER_WINDOWS.bat."
         )
 
     if st.button(
@@ -2612,32 +2450,22 @@ current_upload_saved = False
 
 if source_mode == "Official OPSSAT-AD Test Split":
     analysis = official_predictions.copy()
-    test_ids = set(
-        analysis["segment"].astype(int).tolist()
-    )
-    raw_view = official_segments[
-        official_segments["segment"].isin(
-            test_ids
-        )
-    ].copy()
-    st.sidebar.success(
-        "Loaded the packaged official unseen "
-        "OPSSAT-AD test split."
-    )
+    test_ids = set(analysis["segment"].astype(int).tolist())
+    raw_view = official_segments[official_segments["segment"].isin(test_ids)].copy()
+    st.sidebar.success("Loaded the packaged official unseen OPSSAT-AD test split.")
 
 elif source_mode == "Latest PostgreSQL OPS-SAT Run":
-    stored_database_frame = st.session_state[
-        "opssat_database_analysis_frame"
-    ]
+    stored_database_frame = st.session_state["opssat_database_analysis_frame"]
 
-    stored_incidents = st.session_state[
-        "opssat_database_incidents"
-    ]
+    stored_incidents = st.session_state["opssat_database_incidents"]
 
-    if isinstance(
-        stored_database_frame,
-        pd.DataFrame,
-    ) and not stored_database_frame.empty:
+    if (
+        isinstance(
+            stored_database_frame,
+            pd.DataFrame,
+        )
+        and not stored_database_frame.empty
+    ):
         analysis = stored_database_frame.copy()
 
         if isinstance(
@@ -2646,89 +2474,54 @@ elif source_mode == "Latest PostgreSQL OPS-SAT Run":
         ):
             database_incidents = stored_incidents
 
-        database_run_id = st.session_state[
-            "opssat_analysis_run_id"
-        ]
+        database_run_id = st.session_state["opssat_analysis_run_id"]
 
-        database_source_type = (
-            st.session_state[
-                "opssat_database_source_type"
-            ]
-        )
+        database_source_type = st.session_state["opssat_database_source_type"]
 
-        database_source_file_name = (
-            st.session_state[
-                "opssat_database_source_file_name"
-            ]
-        )
+        database_source_file_name = st.session_state["opssat_database_source_file_name"]
 
         if database_source_type == "uploaded_csv":
             source_name = (
                 "PostgreSQL uploaded CSV — "
-                + str(
-                    database_source_file_name
-                    or "uploaded file"
-                )
+                + str(database_source_file_name or "uploaded file")
                 + " — run "
                 + str(database_run_id)
             )
 
-            stored_raw_view = (
-                st.session_state[
-                    "opssat_database_raw_view"
-                ]
-            )
+            stored_raw_view = st.session_state["opssat_database_raw_view"]
 
-            if isinstance(
-                stored_raw_view,
-                pd.DataFrame,
-            ) and not stored_raw_view.empty:
+            if (
+                isinstance(
+                    stored_raw_view,
+                    pd.DataFrame,
+                )
+                and not stored_raw_view.empty
+            ):
                 raw_view = stored_raw_view.copy()
             else:
                 raw_view = None
 
         else:
-            source_name = (
-                "PostgreSQL analysis run "
-                + str(database_run_id)
-            )
+            source_name = "PostgreSQL analysis run " + str(database_run_id)
 
-            database_segment_ids = set(
-                analysis["segment"].astype(int).tolist()
-            )
+            database_segment_ids = set(analysis["segment"].astype(int).tolist())
 
             raw_view = official_segments[
-                official_segments["segment"].isin(
-                    database_segment_ids
-                )
+                official_segments["segment"].isin(database_segment_ids)
             ].copy()
 
-        st.sidebar.success(
-            "Loaded persisted predictions and incidents "
-            "from PostgreSQL."
-        )
+        st.sidebar.success("Loaded persisted predictions and incidents from PostgreSQL.")
 
     else:
         analysis = official_predictions.copy()
 
-        fallback_segment_ids = set(
-            analysis["segment"].astype(int).tolist()
-        )
+        fallback_segment_ids = set(analysis["segment"].astype(int).tolist())
 
-        raw_view = official_segments[
-            official_segments["segment"].isin(
-                fallback_segment_ids
-            )
-        ].copy()
+        raw_view = official_segments[official_segments["segment"].isin(fallback_segment_ids)].copy()
 
-        source_name = (
-            "Awaiting a PostgreSQL analysis run"
-        )
+        source_name = "Awaiting a PostgreSQL analysis run"
 
-        st.sidebar.info(
-            "No PostgreSQL run is loaded. Use the "
-            "button below to create one."
-        )
+        st.sidebar.info("No PostgreSQL run is loaded. Use the button below to create one.")
 
 else:
     uploaded = st.sidebar.file_uploader(
@@ -2742,47 +2535,28 @@ else:
     )
 
     if uploaded is None:
-        st.info(
-            "Upload a real OPSSAT CSV to begin analysis."
-        )
+        st.info("Upload a real OPSSAT CSV to begin analysis.")
         st.stop()
 
     try:
         uploaded_bytes = uploaded.getvalue()
 
-        upload_signature = sha256(
-            uploaded_bytes
-        ).hexdigest()
+        upload_signature = sha256(uploaded_bytes).hexdigest()
 
-        if (
-            st.session_state[
-                "opssat_upload_signature"
-            ]
-            != upload_signature
-        ):
-            st.session_state[
-                "opssat_upload_signature"
-            ] = upload_signature
+        if st.session_state["opssat_upload_signature"] != upload_signature:
+            st.session_state["opssat_upload_signature"] = upload_signature
 
-            st.session_state[
-                "opssat_upload_save_result"
-            ] = None
+            st.session_state["opssat_upload_save_result"] = None
 
-            st.session_state[
-                "opssat_upload_save_error"
-            ] = None
+            st.session_state["opssat_upload_save_error"] = None
 
-        uploaded_frame = pd.read_csv(
-            BytesIO(uploaded_bytes)
-        )
+        uploaded_frame = pd.read_csv(BytesIO(uploaded_bytes))
 
         (
             upload_features,
             raw_view,
             upload_validation,
-        ) = detect_and_prepare_upload(
-            uploaded_frame
-        )
+        ) = detect_and_prepare_upload(uploaded_frame)
 
         analysis = predict_feature_rows(
             upload_features,
@@ -2791,15 +2565,10 @@ else:
 
         source_name = uploaded.name
 
-        st.sidebar.success(
-            f"Loaded {upload_validation.segments} "
-            "real telemetry segment(s)."
-        )
+        st.sidebar.success(f"Loaded {upload_validation.segments} real telemetry segment(s).")
 
     except Exception as exc:
-        st.error(
-            f"Upload validation failed: {exc}"
-        )
+        st.error(f"Upload validation failed: {exc}")
         st.stop()
 
 st.sidebar.divider()
@@ -2808,206 +2577,105 @@ if database_available:
     st.sidebar.subheader("PostgreSQL Analysis")
 
     if source_mode == "Latest PostgreSQL OPS-SAT Run":
-        analysis_running = bool(
-            st.session_state[
-                "opssat_analysis_running"
-            ]
-        )
+        analysis_running = bool(st.session_state["opssat_analysis_running"])
 
-        analysis_completed = bool(
-            st.session_state[
-                "opssat_analysis_completed"
-            ]
-        )
+        analysis_completed = bool(st.session_state["opssat_analysis_completed"])
 
         run_analysis_button = st.sidebar.button(
             "Run & Save Real Analysis",
             **stretch_width_kwargs(st.button),
-            disabled=(
-                analysis_running
-                or analysis_completed
-            ),
+            disabled=(analysis_running or analysis_completed),
             key="run_opssat_database_analysis",
         )
 
         if run_analysis_button:
-            st.session_state[
-                "opssat_analysis_running"
-            ] = True
+            st.session_state["opssat_analysis_running"] = True
 
-            st.session_state[
-                "opssat_analysis_error"
-            ] = None
+            st.session_state["opssat_analysis_error"] = None
 
             try:
                 with st.spinner(
-                    "Running the real OPS-SAT model "
-                    "and saving results to PostgreSQL..."
+                    "Running the real OPS-SAT model and saving results to PostgreSQL..."
                 ):
-                    telemetry_session_id = (
-                        find_latest_opssat_session_id()
+                    telemetry_session_id = find_latest_opssat_session_id()
+
+                    model_version_id = find_hybrid_model_version_id()
+
+                    database_result = run_real_opssat_analysis(
+                        telemetry_session_id=(telemetry_session_id),
+                        model_version_id=(model_version_id),
+                        artifact_path=MODEL_PATH,
                     )
 
-                    model_version_id = (
-                        find_hybrid_model_version_id()
-                    )
+                st.session_state["opssat_analysis_run_id"] = str(database_result.analysis_run_id)
 
-                    database_result = (
-                        run_real_opssat_analysis(
-                            telemetry_session_id=(
-                                telemetry_session_id
-                            ),
-                            model_version_id=(
-                                model_version_id
-                            ),
-                            artifact_path=MODEL_PATH,
-                        )
-                    )
-
-                st.session_state[
-                    "opssat_analysis_run_id"
-                ] = str(
-                    database_result.analysis_run_id
-                )
-
-                st.session_state[
-                    "opssat_analysis_result"
-                ] = {
-                    "analysis_run_id": str(
-                        database_result.analysis_run_id
-                    ),
-                    "total_predictions": (
-                        database_result.total_predictions
-                    ),
-                    "total_anomalies": (
-                        database_result.total_anomalies
-                    ),
-                    "total_incidents": (
-                        database_result.total_incidents
-                    ),
-                    "mean_risk_score": (
-                        database_result.mean_risk_score
-                    ),
-                    "maximum_risk_score": (
-                        database_result.maximum_risk_score
-                    ),
-                    "mission_health_score": (
-                        database_result.mission_health_score
-                    ),
-                    "mission_health_status": (
-                        database_result.mission_health_status
-                    ),
+                st.session_state["opssat_analysis_result"] = {
+                    "analysis_run_id": str(database_result.analysis_run_id),
+                    "total_predictions": (database_result.total_predictions),
+                    "total_anomalies": (database_result.total_anomalies),
+                    "total_incidents": (database_result.total_incidents),
+                    "mean_risk_score": (database_result.mean_risk_score),
+                    "maximum_risk_score": (database_result.maximum_risk_score),
+                    "mission_health_score": (database_result.mission_health_score),
+                    "mission_health_status": (database_result.mission_health_status),
                 }
 
-                st.session_state[
-                    "opssat_analysis_completed"
-                ] = True
+                st.session_state["opssat_analysis_completed"] = True
 
-                load_database_analysis_details(
-                    database_result.analysis_run_id
-                )
+                load_database_analysis_details(database_result.analysis_run_id)
 
-                st.session_state[
-                    "opssat_analysis_restored"
-                ] = False
+                st.session_state["opssat_analysis_restored"] = False
 
             except Exception as exc:
-                st.session_state[
-                    "opssat_analysis_error"
-                ] = (
-                    f"{type(exc).__name__}: {exc}"
-                )
+                st.session_state["opssat_analysis_error"] = f"{type(exc).__name__}: {exc}"
 
             finally:
-                st.session_state[
-                    "opssat_analysis_running"
-                ] = False
+                st.session_state["opssat_analysis_running"] = False
 
             st.rerun()
 
-
-        analysis_error = st.session_state[
-            "opssat_analysis_error"
-        ]
+        analysis_error = st.session_state["opssat_analysis_error"]
 
         if analysis_error:
-            st.sidebar.error(
-                "Database analysis failed."
-            )
+            st.sidebar.error("Database analysis failed.")
 
-            st.sidebar.caption(
-                str(analysis_error)
-            )
+            st.sidebar.caption(str(analysis_error))
 
-
-        stored_result = st.session_state[
-            "opssat_analysis_result"
-        ]
+        stored_result = st.session_state["opssat_analysis_result"]
 
         if isinstance(stored_result, dict):
-            analysis_restored = bool(
-                st.session_state[
-                    "opssat_analysis_restored"
-                ]
-            )
+            analysis_restored = bool(st.session_state["opssat_analysis_restored"])
 
             if analysis_restored:
-                st.sidebar.success(
-                    "Latest analysis loaded from PostgreSQL."
-                )
+                st.sidebar.success("Latest analysis loaded from PostgreSQL.")
             else:
-                st.sidebar.success(
-                    "Analysis saved to PostgreSQL."
-                )
+                st.sidebar.success("Analysis saved to PostgreSQL.")
 
-            st.sidebar.caption(
-                "Run ID: "
-                + str(
-                    stored_result[
-                        "analysis_run_id"
-                    ]
-                )
-            )
+            st.sidebar.caption("Run ID: " + str(stored_result["analysis_run_id"]))
 
             st.sidebar.metric(
                 "Predictions",
-                int(
-                    stored_result[
-                        "total_predictions"
-                    ]
-                ),
+                int(stored_result["total_predictions"]),
             )
 
             st.sidebar.metric(
                 "Detected Anomalies",
-                int(
-                    stored_result[
-                        "total_anomalies"
-                    ]
-                ),
+                int(stored_result["total_anomalies"]),
             )
 
             st.sidebar.metric(
-            "Grouped Incidents",
-                int(
-                    stored_result[
-                        "total_incidents"
-                    ]
-                ),
+                "Grouped Incidents",
+                int(stored_result["total_incidents"]),
             )
 
             st.sidebar.metric(
                 "Mean Risk",
-                (
-                    f"{float(stored_result['mean_risk_score']):.2f}"
-                ),
+                (f"{float(stored_result['mean_risk_score']):.2f}"),
             )
 
             st.sidebar.metric(
                 "Maximum Risk",
-                (
-                    f"{float(stored_result['maximum_risk_score']):.2f}"
-                ),
+                (f"{float(stored_result['maximum_risk_score']):.2f}"),
             )
 
             reset_analysis_button = st.sidebar.button(
@@ -3017,68 +2685,39 @@ if database_available:
             )
 
             if reset_analysis_button:
-                st.session_state[
-                    "opssat_analysis_running"
-                ] = False
+                st.session_state["opssat_analysis_running"] = False
 
-                st.session_state[
-                    "opssat_analysis_completed"
-                ] = False
+                st.session_state["opssat_analysis_completed"] = False
 
-                st.session_state[
-                    "opssat_analysis_run_id"
-                ] = None
+                st.session_state["opssat_analysis_run_id"] = None
 
-                st.session_state[
-                    "opssat_analysis_result"
-                ] = None
+                st.session_state["opssat_analysis_result"] = None
 
-                st.session_state[
-                    "opssat_analysis_error"
-                ] = None
+                st.session_state["opssat_analysis_error"] = None
 
-                st.session_state[
-                    "opssat_analysis_restored"
-                ] = False
+                st.session_state["opssat_analysis_restored"] = False
 
-                st.session_state[
-                    "opssat_database_analysis_frame"
-                ] = None
+                st.session_state["opssat_database_analysis_frame"] = None
 
-                st.session_state[
-                    "opssat_database_incidents"
-                ] = None
+                st.session_state["opssat_database_incidents"] = None
 
-                st.session_state[
-                    "opssat_database_raw_view"
-                ] = None
+                st.session_state["opssat_database_raw_view"] = None
 
-                st.session_state[
-                    "opssat_database_source_type"
-                ] = None
+                st.session_state["opssat_database_source_type"] = None
 
-                st.session_state[
-                    "opssat_database_source_file_name"
-                ] = None
+                st.session_state["opssat_database_source_file_name"] = None
 
                 st.rerun()
 
     elif source_mode == "Official OPSSAT-AD Test Split":
         st.sidebar.info(
-            "Select **Latest PostgreSQL OPS-SAT Run** "
-            "to run, save, and inspect persisted results."
+            "Select **Latest PostgreSQL OPS-SAT Run** to run, save, and inspect persisted results."
         )
 
     else:
-        upload_save_result = st.session_state[
-            "opssat_upload_save_result"
-        ]
+        upload_save_result = st.session_state["opssat_upload_save_result"]
 
-        upload_save_running = bool(
-            st.session_state[
-                "opssat_upload_save_running"
-            ]
-        )
+        upload_save_running = bool(st.session_state["opssat_upload_save_running"])
 
         current_upload_saved = (
             isinstance(
@@ -3086,10 +2725,7 @@ if database_available:
                 dict,
             )
             and upload_signature is not None
-            and upload_save_result.get(
-                "upload_signature"
-            )
-            == upload_signature
+            and upload_save_result.get("upload_signature") == upload_signature
         )
 
         save_uploaded_analysis = st.sidebar.button(
@@ -3105,13 +2741,9 @@ if database_available:
         )
 
         if save_uploaded_analysis:
-            st.session_state[
-                "opssat_upload_save_running"
-            ] = True
+            st.session_state["opssat_upload_save_running"] = True
 
-            st.session_state[
-                "opssat_upload_save_error"
-            ] = None
+            st.session_state["opssat_upload_save_error"] = None
 
             try:
                 if (
@@ -3120,211 +2752,97 @@ if database_available:
                     or upload_validation is None
                     or upload_signature is None
                 ):
-                    raise RuntimeError(
-                        "Upload data is not available for persistence."
-                    )
+                    raise RuntimeError("Upload data is not available for persistence.")
 
                 with st.spinner(
-                    "Saving the uploaded dataset, telemetry, "
-                    "predictions, and grouped incidents..."
+                    "Saving the uploaded dataset, telemetry, predictions, and grouped incidents..."
                 ):
-                    persistence_result = (
-                        persist_uploaded_opssat_analysis(
-                            feature_frame=upload_features,
-                            original_file_bytes=(
-                                uploaded_bytes
-                            ),
-                            original_file_name=(
-                                uploaded.name
-                            ),
-                            model_version_id=(
-                                find_hybrid_model_version_id()
-                            ),
-                            artifact_path=MODEL_PATH,
-                            project_root=PROJECT_ROOT,
-                            upload_kind=str(
-                                upload_validation.kind
-                            ),
-                            validation_metadata={
-                                "input_rows": len(
-                                    uploaded_frame
-                                ),
-                                "accepted_rows": int(
-                                    upload_validation.rows
-                                ),
-                                "segments": int(
-                                    upload_validation.segments
-                                ),
-                                "channels": int(
-                                    upload_validation.channels
-                                ),
-                                "label_coverage": float(
-                                    upload_validation.label_coverage
-                                ),
-                                "removed_rows": int(
-                                    upload_validation.removed_rows
-                                ),
-                                "messages": [
-                                    str(message)
-                                    for message in (
-                                        upload_validation.messages
-                                    )
-                                ],
-                            },
-                        )
+                    persistence_result = persist_uploaded_opssat_analysis(
+                        feature_frame=upload_features,
+                        original_file_bytes=(uploaded_bytes),
+                        original_file_name=(uploaded.name),
+                        model_version_id=(find_hybrid_model_version_id()),
+                        artifact_path=MODEL_PATH,
+                        project_root=PROJECT_ROOT,
+                        upload_kind=str(upload_validation.kind),
+                        validation_metadata={
+                            "input_rows": len(uploaded_frame),
+                            "accepted_rows": int(upload_validation.rows),
+                            "segments": int(upload_validation.segments),
+                            "channels": int(upload_validation.channels),
+                            "label_coverage": float(upload_validation.label_coverage),
+                            "removed_rows": int(upload_validation.removed_rows),
+                            "messages": [str(message) for message in (upload_validation.messages)],
+                        },
                     )
 
-                analysis_result = (
-                    persistence_result.analysis_result
-                )
+                analysis_result = persistence_result.analysis_result
 
-                st.session_state[
-                    "opssat_upload_save_result"
-                ] = {
+                st.session_state["opssat_upload_save_result"] = {
                     "upload_signature": upload_signature,
-                    "dataset_id": str(
-                        persistence_result.dataset_id
-                    ),
-                    "telemetry_session_id": str(
-                        persistence_result.telemetry_session_id
-                    ),
-                    "analysis_run_id": str(
-                        analysis_result.analysis_run_id
-                    ),
-                    "total_predictions": int(
-                        analysis_result.total_predictions
-                    ),
-                    "total_anomalies": int(
-                        analysis_result.total_anomalies
-                    ),
-                    "total_incidents": int(
-                        analysis_result.total_incidents
-                    ),
-                    "mean_risk_score": float(
-                        analysis_result.mean_risk_score
-                    ),
-                    "maximum_risk_score": float(
-                        analysis_result.maximum_risk_score
-                    ),
-                    "mission_health_score": float(
-                        analysis_result.mission_health_score
-                    ),
-                    "mission_health_status": str(
-                        analysis_result.mission_health_status
-                    ),
-                    "sha256_hash": (
-                        persistence_result.sha256_hash
-                    ),
+                    "dataset_id": str(persistence_result.dataset_id),
+                    "telemetry_session_id": str(persistence_result.telemetry_session_id),
+                    "analysis_run_id": str(analysis_result.analysis_run_id),
+                    "total_predictions": int(analysis_result.total_predictions),
+                    "total_anomalies": int(analysis_result.total_anomalies),
+                    "total_incidents": int(analysis_result.total_incidents),
+                    "mean_risk_score": float(analysis_result.mean_risk_score),
+                    "maximum_risk_score": float(analysis_result.maximum_risk_score),
+                    "mission_health_score": float(analysis_result.mission_health_score),
+                    "mission_health_status": str(analysis_result.mission_health_status),
+                    "sha256_hash": (persistence_result.sha256_hash),
                 }
 
-                st.session_state[
-                    "opssat_analysis_run_id"
-                ] = str(
-                    analysis_result.analysis_run_id
-                )
+                st.session_state["opssat_analysis_run_id"] = str(analysis_result.analysis_run_id)
 
-                st.session_state[
-                    "opssat_analysis_result"
-                ] = {
-                    "analysis_run_id": str(
-                        analysis_result.analysis_run_id
-                    ),
-                    "total_predictions": int(
-                        analysis_result.total_predictions
-                    ),
-                    "total_anomalies": int(
-                        analysis_result.total_anomalies
-                    ),
-                    "total_incidents": int(
-                        analysis_result.total_incidents
-                    ),
-                    "mean_risk_score": float(
-                        analysis_result.mean_risk_score
-                    ),
-                    "maximum_risk_score": float(
-                        analysis_result.maximum_risk_score
-                    ),
-                    "mission_health_score": float(
-                        analysis_result.mission_health_score
-                    ),
-                    "mission_health_status": str(
-                        analysis_result.mission_health_status
-                    ),
+                st.session_state["opssat_analysis_result"] = {
+                    "analysis_run_id": str(analysis_result.analysis_run_id),
+                    "total_predictions": int(analysis_result.total_predictions),
+                    "total_anomalies": int(analysis_result.total_anomalies),
+                    "total_incidents": int(analysis_result.total_incidents),
+                    "mean_risk_score": float(analysis_result.mean_risk_score),
+                    "maximum_risk_score": float(analysis_result.maximum_risk_score),
+                    "mission_health_score": float(analysis_result.mission_health_score),
+                    "mission_health_status": str(analysis_result.mission_health_status),
                 }
 
-                st.session_state[
-                    "opssat_analysis_completed"
-                ] = True
+                st.session_state["opssat_analysis_completed"] = True
 
-                st.session_state[
-                    "opssat_analysis_restored"
-                ] = False
+                st.session_state["opssat_analysis_restored"] = False
 
-                load_database_analysis_details(
-                    analysis_result.analysis_run_id
-                )
+                load_database_analysis_details(analysis_result.analysis_run_id)
 
                 st.rerun()
 
             except Exception as exc:
-                st.session_state[
-                    "opssat_upload_save_error"
-                ] = (
-                    f"{type(exc).__name__}: {exc}"
-                )
+                st.session_state["opssat_upload_save_error"] = f"{type(exc).__name__}: {exc}"
 
             finally:
-                st.session_state[
-                    "opssat_upload_save_running"
-                ] = False
+                st.session_state["opssat_upload_save_running"] = False
 
-        upload_save_error = st.session_state[
-            "opssat_upload_save_error"
-        ]
+        upload_save_error = st.session_state["opssat_upload_save_error"]
 
         if upload_save_error:
-            st.sidebar.error(
-                "Uploaded analysis could not be saved."
-            )
+            st.sidebar.error("Uploaded analysis could not be saved.")
 
-            st.sidebar.caption(
-                str(upload_save_error)
-            )
+            st.sidebar.caption(str(upload_save_error))
 
         if current_upload_saved and isinstance(
             upload_save_result,
             dict,
         ):
-            st.sidebar.success(
-                "Upload, predictions, and incidents "
-                "saved to PostgreSQL."
-            )
+            st.sidebar.success("Upload, predictions, and incidents saved to PostgreSQL.")
 
-            st.sidebar.caption(
-                "Run ID: "
-                + str(
-                    upload_save_result[
-                        "analysis_run_id"
-                    ]
-                )
-            )
+            st.sidebar.caption("Run ID: " + str(upload_save_result["analysis_run_id"]))
 
             st.sidebar.metric(
                 "Saved Predictions",
-                int(
-                    upload_save_result[
-                        "total_predictions"
-                    ]
-                ),
+                int(upload_save_result["total_predictions"]),
             )
 
             st.sidebar.metric(
                 "Saved Incidents",
-                int(
-                    upload_save_result[
-                        "total_incidents"
-                    ]
-                ),
+                int(upload_save_result["total_incidents"]),
             )
 
 else:
@@ -3383,6 +2901,7 @@ def prediction_summary(frame: pd.DataFrame) -> dict[str, float | int | str]:
         "status": status,
     }
 
+
 def safe_json_dictionary(
     value: object,
 ) -> dict[str, object]:
@@ -3391,10 +2910,7 @@ def safe_json_dictionary(
     """
 
     if isinstance(value, dict):
-        return {
-            str(key): item
-            for key, item in value.items()
-        }
+        return {str(key): item for key, item in value.items()}
 
     if isinstance(value, str):
         try:
@@ -3404,10 +2920,7 @@ def safe_json_dictionary(
             return {}
 
         if isinstance(parsed_value, dict):
-            return {
-                str(key): item
-                for key, item in parsed_value.items()
-            }
+            return {str(key): item for key, item in parsed_value.items()}
 
     return {}
 
@@ -3438,26 +2951,19 @@ def safe_json_list(
     return []
 
 
-def load_current_grouped_incidents(
-) -> list[dict[str, object]]:
+def load_current_grouped_incidents() -> list[dict[str, object]]:
     """
     Load incidents belonging to the current PostgreSQL run.
     """
 
-    analysis_run_id_value = st.session_state.get(
-        "opssat_analysis_run_id"
-    )
+    analysis_run_id_value = st.session_state.get("opssat_analysis_run_id")
 
     if analysis_run_id_value is None:
         return []
 
-    analysis_run_id = to_uuid(
-        analysis_run_id_value
-    )
+    analysis_run_id = to_uuid(analysis_run_id_value)
 
-    return list_incidents(
-        analysis_run_id
-    )
+    return list_incidents(analysis_run_id)
 
 
 def build_grouped_incident_frame(
@@ -3471,41 +2977,20 @@ def build_grouped_incident_frame(
     rows: list[dict[str, object]] = []
 
     for incident in incidents:
-        metadata = safe_json_dictionary(
-            incident.get("metadata")
-        )
+        metadata = safe_json_dictionary(incident.get("metadata"))
 
-        affected_subsystems = safe_json_list(
-            incident.get(
-                "affected_subsystems"
-            )
-        )
+        affected_subsystems = safe_json_list(incident.get("affected_subsystems"))
 
-        segment_ids = safe_json_list(
-            metadata.get(
-                "segment_ids"
-            )
-        )
+        segment_ids = safe_json_list(metadata.get("segment_ids"))
 
-        channel = metadata.get(
-            "channel"
-        )
+        channel = metadata.get("channel")
 
         if not channel and affected_subsystems:
             channel = affected_subsystems[0]
 
-        duration_samples = int(
-            incident.get(
-                "duration_samples"
-            )
-            or len(segment_ids)
-            or 1
-        )
+        duration_samples = int(incident.get("duration_samples") or len(segment_ids) or 1)
 
-        displayed_segments = ", ".join(
-            str(segment_id)
-            for segment_id in segment_ids[:12]
-        )
+        displayed_segments = ", ".join(str(segment_id) for segment_id in segment_ids[:12])
 
         if len(segment_ids) > 12:
             displayed_segments += ", ..."
@@ -3518,90 +3003,46 @@ def build_grouped_incident_frame(
                         "",
                     )
                 ),
-                "Channel": str(
-                    channel or "Unknown"
-                ),
+                "Channel": str(channel or "Unknown"),
                 "Severity": str(
                     incident.get(
                         "severity",
                         "Watch",
                     )
                 ),
-                "Start Segment": metadata.get(
-                    "start_segment"
-                ),
-                "End Segment": metadata.get(
-                    "end_segment"
-                ),
+                "Start Segment": metadata.get("start_segment"),
+                "End Segment": metadata.get("end_segment"),
                 "Duration": duration_samples,
-                "Peak Risk": float(
-                    incident.get(
-                        "peak_risk_score"
-                    )
-                    or 0.0
-                ),
-                "Peak Confidence": float(
-                    incident.get(
-                        "peak_confidence"
-                    )
-                    or 0.0
-                ),
-                "Top Feature": str(
-                    incident.get(
-                        "top_feature"
-                    )
-                    or "Unknown"
-                ),
-                "Review Required": (
-                    "Yes"
-                    if bool(
-                        incident.get(
-                            "human_review_required"
-                        )
-                    )
-                    else "No"
-                ),
+                "Peak Risk": float(incident.get("peak_risk_score") or 0.0),
+                "Peak Confidence": float(incident.get("peak_confidence") or 0.0),
+                "Top Feature": str(incident.get("top_feature") or "Unknown"),
+                "Review Required": ("Yes" if bool(incident.get("human_review_required")) else "No"),
                 "Status": str(
                     incident.get(
                         "status",
                         "open",
                     )
                 ),
-                "Grouped Segments": (
-                    displayed_segments
-                ),
+                "Grouped Segments": (displayed_segments),
             }
         )
 
-    return pd.DataFrame(
-        rows
-    )
+    return pd.DataFrame(rows)
 
 
 health_incidents: list[dict[str, object]] = []
 
-should_load_health_incidents = (
-    source_mode == "Latest PostgreSQL OPS-SAT Run"
-    or (
-        source_mode == "Upload Real OPSSAT CSV"
-        and current_upload_saved
-    )
+should_load_health_incidents = source_mode == "Latest PostgreSQL OPS-SAT Run" or (
+    source_mode == "Upload Real OPSSAT CSV" and current_upload_saved
 )
 
 if should_load_health_incidents:
     try:
-        health_incidents = (
-            load_current_grouped_incidents()
-        )
+        health_incidents = load_current_grouped_incidents()
 
     except Exception as exc:
-        st.sidebar.warning(
-            "Mission health could not load current "
-            "incident workflow data."
-        )
-        st.sidebar.caption(
-            f"{type(exc).__name__}: {exc}"
-        )
+        st.sidebar.warning("Mission health could not load current incident workflow data.")
+        st.sidebar.caption(f"{type(exc).__name__}: {exc}")
 
 mission_health = calculate_mission_health_score(
     frame=analysis,
@@ -3688,7 +3129,7 @@ if page == "Home":
     team_label = "2 BUILDERS"
 
     st.markdown(
-        f"""
+        """
 <div class="mg-home-hero">
   <div class="mg-home-copy-area">
     <span class="mg-eyebrow">Global AI Builders Challenge / Space Intelligence</span>
@@ -3737,9 +3178,9 @@ if page == "Home":
     st.markdown(
         f"""
 <div class="mg-stat-strip">
-  <div class="mg-stat"><span>Telemetry segments</span><b>{int(summary['segments']):,}</b></div>
-  <div class="mg-stat"><span>Detected anomalies</span><b>{int(summary['anomaly_count']):,}</b></div>
-  <div class="mg-stat"><span>Mission health</span><b>{float(mission_health['score']):.1f}/100</b></div>
+  <div class="mg-stat"><span>Telemetry segments</span><b>{int(summary["segments"]):,}</b></div>
+  <div class="mg-stat"><span>Detected anomalies</span><b>{int(summary["anomaly_count"]):,}</b></div>
+  <div class="mg-stat"><span>Mission health</span><b>{float(mission_health["score"]):.1f}/100</b></div>
   <div class="mg-stat"><span>System state</span><b>{database_label}</b></div>
 </div>
 
@@ -3808,23 +3249,23 @@ elif page == "Mission Overview":
     c6.metric("Data Compatibility", drift_summary["compatibility"])
 
     if summary["status"] == "Critical":
-        st.error("At least one segment reached the critical risk band. Operator review is required.")
+        st.error(
+            "At least one segment reached the critical risk band. Operator review is required."
+        )
     elif summary["status"] == "Warning":
         st.warning("The model detected one or more anomalous telemetry segments.")
     elif summary["status"] == "Watch":
-        st.info("No segment crossed the anomaly threshold, but the aggregate risk remains elevated.")
+        st.info(
+            "No segment crossed the anomaly threshold, but the aggregate risk remains elevated."
+        )
     else:
         st.success("The analyzed segments remain within the learned nominal envelope.")
 
     st.subheader("Prototype Mission Health Score")
 
-    health_status = str(
-        mission_health["status"]
-    )
+    health_status = str(mission_health["status"])
 
-    health_score = float(
-        mission_health["score"]
-    )
+    health_score = float(mission_health["score"])
 
     health_status_color = {
         "Nominal": theme["success"],
@@ -3836,11 +3277,7 @@ elif page == "Mission Overview":
         theme["muted"],
     )
 
-    health_chart_column, health_detail_column = (
-        st.columns(
-            [1.05, 1.95]
-        )
-    )
+    health_chart_column, health_detail_column = st.columns([1.05, 1.95])
 
     with health_chart_column:
         health_gauge = go.Figure(
@@ -3854,10 +3291,7 @@ elif page == "Mission Overview":
                     },
                 },
                 title={
-                    "text": (
-                        "Mission Health — "
-                        + health_status
-                    ),
+                    "text": ("Mission Health — " + health_status),
                     "font": {
                         "color": theme["text"],
                     },
@@ -3875,27 +3309,19 @@ elif page == "Mission Overview":
                     "steps": [
                         {
                             "range": [0, 50],
-                            "color": (
-                                "rgba(255,92,108,0.20)"
-                            ),
+                            "color": ("rgba(255,92,108,0.20)"),
                         },
                         {
                             "range": [50, 70],
-                            "color": (
-                                "rgba(246,173,54,0.20)"
-                            ),
+                            "color": ("rgba(246,173,54,0.20)"),
                         },
                         {
                             "range": [70, 85],
-                            "color": (
-                                "rgba(105,185,255,0.20)"
-                            ),
+                            "color": ("rgba(105,185,255,0.20)"),
                         },
                         {
                             "range": [85, 100],
-                            "color": (
-                                "rgba(53,208,127,0.20)"
-                            ),
+                            "color": ("rgba(53,208,127,0.20)"),
                         },
                     ],
                     "threshold": {
@@ -3924,9 +3350,7 @@ elif page == "Mission Overview":
             showlegend=False,
         )
 
-        show_chart(
-            health_gauge
-        )
+        show_chart(health_gauge)
 
     with health_detail_column:
         (
@@ -3941,34 +3365,22 @@ elif page == "Mission Overview":
 
         health_metric_1.metric(
             "Telemetry Stability",
-            (
-                f"{float(mission_health['telemetry_stability']):.1f}"
-                "/100"
-            ),
+            (f"{float(mission_health['telemetry_stability']):.1f}/100"),
         )
 
         health_metric_2.metric(
             "Anomaly Control",
-            (
-                f"{float(mission_health['anomaly_control']):.1f}"
-                "/100"
-            ),
+            (f"{float(mission_health['anomaly_control']):.1f}/100"),
         )
 
         health_metric_3.metric(
             "Peak-Risk Resilience",
-            (
-                f"{float(mission_health['peak_resilience']):.1f}"
-                "/100"
-            ),
+            (f"{float(mission_health['peak_resilience']):.1f}/100"),
         )
 
         health_metric_4.metric(
             "Incident Readiness",
-            (
-                f"{float(mission_health['incident_readiness']):.1f}"
-                "/100"
-            ),
+            (f"{float(mission_health['incident_readiness']):.1f}/100"),
         )
 
         st.markdown(
@@ -3978,10 +3390,10 @@ elif page == "Mission Overview":
 {html.escape(health_status)}
 <br>
 <b>Incidents considered:</b>
-{int(mission_health['incidents_considered'])}
+{int(mission_health["incidents_considered"])}
 <br>
 <b>Unresolved incidents:</b>
-{int(mission_health['unresolved_incidents'])}
+{int(mission_health["unresolved_incidents"])}
 <br>
 <b>Composite weights:</b>
 30% telemetry stability, 20% anomaly control,
@@ -3999,9 +3411,12 @@ elif page == "Mission Overview":
 
     left, right = st.columns(2)
     with left:
-        distribution = analysis["risk_level"].value_counts().reindex(
-            ["Normal", "Watch", "Warning", "Critical"], fill_value=0
-        ).reset_index()
+        distribution = (
+            analysis["risk_level"]
+            .value_counts()
+            .reindex(["Normal", "Watch", "Warning", "Critical"], fill_value=0)
+            .reset_index()
+        )
         distribution.columns = ["Risk Level", "Segments"]
         fig = px.pie(
             distribution,
@@ -4014,11 +3429,14 @@ elif page == "Mission Overview":
         )
         show_chart(fig)
     with right:
-        channel_summary = (
-            analysis.groupby("channel", as_index=False)
-            .agg(Segments=("segment", "count"), Anomalies=("prediction", "sum"), Mean_Risk=("hybrid_score", "mean"))
+        channel_summary = analysis.groupby("channel", as_index=False).agg(
+            Segments=("segment", "count"),
+            Anomalies=("prediction", "sum"),
+            Mean_Risk=("hybrid_score", "mean"),
         )
-        channel_summary["Channel Name"] = channel_summary["channel"].map(CHANNEL_NAMES).fillna(channel_summary["channel"])
+        channel_summary["Channel Name"] = (
+            channel_summary["channel"].map(CHANNEL_NAMES).fillna(channel_summary["channel"])
+        )
         fig = px.bar(
             channel_summary,
             x="Channel Name",
@@ -4032,8 +3450,16 @@ elif page == "Mission Overview":
 
     st.subheader("Highest-Risk Segments")
     columns = [
-        "segment", "channel", "prediction_label", "risk_level", "hybrid_score",
-        "decision_margin", "top_feature", "top_feature_contribution", "anomaly", "train",
+        "segment",
+        "channel",
+        "prediction_label",
+        "risk_level",
+        "hybrid_score",
+        "decision_margin",
+        "top_feature",
+        "top_feature_contribution",
+        "anomaly",
+        "train",
     ]
     st.dataframe(
         analysis[columns].sort_values("hybrid_score", ascending=False).head(30),
@@ -4044,9 +3470,13 @@ elif page == "Mission Overview":
 elif page == "Telemetry Explorer":
     st.header("Real Telemetry Explorer")
     if raw_view is None or raw_view.empty:
-        st.info("This feature upload contains engineered segment rows only. Upload a raw segments.csv-style file to view signal traces.")
+        st.info(
+            "This feature upload contains engineered segment rows only. Upload a raw segments.csv-style file to view signal traces."
+        )
     else:
-        available = sorted(set(raw_view["segment"].astype(int)) & set(analysis["segment"].astype(int)))
+        available = sorted(
+            set(raw_view["segment"].astype(int)) & set(analysis["segment"].astype(int))
+        )
         selected_segment = st.selectbox("Select a real telemetry segment", available)
         signal_frame = raw_view[raw_view["segment"].astype(int) == int(selected_segment)].copy()
         prediction_row = analysis[analysis["segment"].astype(int) == int(selected_segment)].iloc[0]
@@ -4068,63 +3498,49 @@ elif page == "Telemetry Explorer":
             y="value",
             labels={"value": "Telemetry Value", "timestamp": "Timestamp"},
         )
-        fig.update_traces(line={"color": risk_color(str(prediction_row["risk_level"])), "width": 2.2})
+        fig.update_traces(
+            line={"color": risk_color(str(prediction_row["risk_level"])), "width": 2.2}
+        )
         show_chart(fig)
 
         if pd.notna(prediction_row.get("anomaly")):
             truth = "Anomaly" if int(prediction_row["anomaly"]) == 1 else "Normal"
-            st.caption(f"Ground-truth label: {truth} · Official split: {'Train' if int(prediction_row['train']) == 1 else 'Test'}")
+            st.caption(
+                f"Ground-truth label: {truth} · Official split: {'Train' if int(prediction_row['train']) == 1 else 'Test'}"
+            )
 
         with st.expander("Engineered segment features"):
             feature_columns = artifact["numeric_features"]
             st.dataframe(
-                pd.DataFrame({"Feature": feature_columns, "Value": [prediction_row[c] for c in feature_columns]}),
+                pd.DataFrame(
+                    {
+                        "Feature": feature_columns,
+                        "Value": [prediction_row[c] for c in feature_columns],
+                    }
+                ),
                 **stretch_width_kwargs(st.dataframe),
                 hide_index=True,
             )
 
 elif page == "Incident Intelligence":
-    st.header(
-        "Incident Intelligence"
-    )
+    st.header("Incident Intelligence")
 
-    if (
-        source_mode
-        == "Latest PostgreSQL OPS-SAT Run"
-    ):
-        grouped_incidents = (
-            load_current_grouped_incidents()
-        )
+    if source_mode == "Latest PostgreSQL OPS-SAT Run":
+        grouped_incidents = load_current_grouped_incidents()
 
         if not grouped_incidents:
-            st.success(
-                "No grouped incidents were found "
-                "for the current PostgreSQL run."
-            )
+            st.success("No grouped incidents were found for the current PostgreSQL run.")
 
         else:
-            incident_frame = (
-                build_grouped_incident_frame(
-                    grouped_incidents
-                )
-            )
+            incident_frame = build_grouped_incident_frame(grouped_incidents)
 
             incident_lookup = {
-                str(
-                    incident[
-                        "incident_code"
-                    ]
-                ): incident
-                for incident in grouped_incidents
+                str(incident["incident_code"]): incident for incident in grouped_incidents
             }
 
             # Normalize workflow statuses for metrics and filtering.
             incident_frame["Status"] = (
-                incident_frame["Status"]
-                .fillna("open")
-                .astype(str)
-                .str.strip()
-                .str.lower()
+                incident_frame["Status"].fillna("open").astype(str).str.strip().str.lower()
             )
 
             status_order = [
@@ -4141,80 +3557,26 @@ elif page == "Incident Intelligence":
                 "resolved",
             }
 
-            total_incidents = len(
-                incident_frame
-            )
+            total_incidents = len(incident_frame)
 
-            critical_incidents = int(
-                (
-                    incident_frame[
-                        "Severity"
-                    ]
-                    == "Critical"
-                ).sum()
-            )
+            critical_incidents = int((incident_frame["Severity"] == "Critical").sum())
 
-            multi_segment_incidents = int(
-                (
-                    incident_frame[
-                        "Duration"
-                    ]
-                    > 1
-                ).sum()
-            )
+            multi_segment_incidents = int((incident_frame["Duration"] > 1).sum())
 
             pending_review_incidents = int(
                 (
-                    (
-                        incident_frame[
-                            "Review Required"
-                        ]
-                        == "Yes"
-                    )
-                    & (
-                        incident_frame[
-                            "Status"
-                        ]
-                        == "open"
-                    )
+                    (incident_frame["Review Required"] == "Yes")
+                    & (incident_frame["Status"] == "open")
                 ).sum()
             )
 
-            under_review_incidents = int(
-                (
-                    incident_frame[
-                        "Status"
-                    ]
-                    == "under_review"
-                ).sum()
-            )
+            under_review_incidents = int((incident_frame["Status"] == "under_review").sum())
 
-            confirmed_incidents = int(
-                (
-                    incident_frame[
-                        "Status"
-                    ]
-                    == "confirmed"
-                ).sum()
-            )
+            confirmed_incidents = int((incident_frame["Status"] == "confirmed").sum())
 
-            rejected_incidents = int(
-                (
-                    incident_frame[
-                        "Status"
-                    ]
-                    == "rejected"
-                ).sum()
-            )
+            rejected_incidents = int((incident_frame["Status"] == "rejected").sum())
 
-            resolved_incidents = int(
-                (
-                    incident_frame[
-                        "Status"
-                    ]
-                    == "resolved"
-                ).sum()
-            )
+            resolved_incidents = int((incident_frame["Status"] == "resolved").sum())
 
             (
                 metric_1,
@@ -4278,19 +3640,12 @@ elif page == "Incident Intelligence":
                 "the operator-review workflow."
             )
 
-            st.subheader(
-                "Incident Operations Filters"
-            )
+            st.subheader("Incident Operations Filters")
 
             available_statuses = [
                 status
                 for status in status_order
-                if status
-                in set(
-                    incident_frame[
-                        "Status"
-                    ].tolist()
-                )
+                if status in set(incident_frame["Status"].tolist())
             ]
 
             severity_order = [
@@ -4302,22 +3657,11 @@ elif page == "Incident Intelligence":
             available_severities = [
                 severity
                 for severity in severity_order
-                if severity
-                in set(
-                    incident_frame[
-                        "Severity"
-                    ].tolist()
-                )
+                if severity in set(incident_frame["Severity"].tolist())
             ]
 
             available_channels = sorted(
-                incident_frame[
-                    "Channel"
-                ]
-                .dropna()
-                .astype(str)
-                .unique()
-                .tolist()
+                incident_frame["Channel"].dropna().astype(str).unique().tolist()
             )
 
             (
@@ -4332,16 +3676,11 @@ elif page == "Incident Intelligence":
                     "Status",
                     options=available_statuses,
                     default=[],
-                    format_func=lambda value: (
-                        value.replace(
-                            "_",
-                            " ",
-                        ).title()
-                    ),
-                    help=(
-                        "Leave empty to show "
-                        "all workflow statuses."
-                    ),
+                    format_func=lambda value: value.replace(
+                        "_",
+                        " ",
+                    ).title(),
+                    help=("Leave empty to show all workflow statuses."),
                 )
 
             with filter_column_2:
@@ -4349,10 +3688,7 @@ elif page == "Incident Intelligence":
                     "Severity",
                     options=available_severities,
                     default=[],
-                    help=(
-                        "Leave empty to show "
-                        "all severity levels."
-                    ),
+                    help=("Leave empty to show all severity levels."),
                 )
 
             with filter_column_3:
@@ -4360,10 +3696,7 @@ elif page == "Incident Intelligence":
                     "Telemetry Channel",
                     options=available_channels,
                     default=[],
-                    help=(
-                        "Leave empty to show "
-                        "all telemetry channels."
-                    ),
+                    help=("Leave empty to show all telemetry channels."),
                 )
 
             with filter_column_4:
@@ -4378,107 +3711,45 @@ elif page == "Incident Intelligence":
                     ],
                 )
 
-            filtered_incident_frame = (
-                incident_frame.copy()
-            )
+            filtered_incident_frame = incident_frame.copy()
 
             if selected_statuses:
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Status"
-                        ].isin(
-                            selected_statuses
-                        )
-                    ]
-                )
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Status"].isin(selected_statuses)
+                ]
 
             if selected_severities:
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Severity"
-                        ].isin(
-                            selected_severities
-                        )
-                    ]
-                )
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Severity"].isin(selected_severities)
+                ]
 
             if selected_channels:
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Channel"
-                        ].isin(
-                            selected_channels
-                        )
-                    ]
-                )
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Channel"].isin(selected_channels)
+                ]
 
-            if (
-                selected_review_state
-                == "Pending Human Review"
-            ):
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        (
-                            filtered_incident_frame[
-                                "Review Required"
-                            ]
-                            == "Yes"
-                        )
-                        & (
-                            filtered_incident_frame[
-                                "Status"
-                            ]
-                            == "open"
-                        )
-                    ]
-                )
+            if selected_review_state == "Pending Human Review":
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    (filtered_incident_frame["Review Required"] == "Yes")
+                    & (filtered_incident_frame["Status"] == "open")
+                ]
 
-            elif (
-                selected_review_state
-                == "Under Review"
-            ):
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Status"
-                        ]
-                        == "under_review"
-                    ]
-                )
+            elif selected_review_state == "Under Review":
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Status"] == "under_review"
+                ]
 
-            elif (
-                selected_review_state
-                == "Decision Recorded"
-            ):
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Status"
-                        ].isin(
-                            decision_recorded_statuses
-                        )
-                    ]
-                )
+            elif selected_review_state == "Decision Recorded":
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Status"].isin(decision_recorded_statuses)
+                ]
 
-            elif (
-                selected_review_state
-                == "No Review Required"
-            ):
-                filtered_incident_frame = (
-                    filtered_incident_frame.loc[
-                        filtered_incident_frame[
-                            "Review Required"
-                        ]
-                        == "No"
-                    ]
-                )
+            elif selected_review_state == "No Review Required":
+                filtered_incident_frame = filtered_incident_frame.loc[
+                    filtered_incident_frame["Review Required"] == "No"
+                ]
 
-            filtered_incident_frame = (
-                filtered_incident_frame.copy()
-            )
+            filtered_incident_frame = filtered_incident_frame.copy()
 
             st.caption(
                 "Showing "
@@ -4489,22 +3760,13 @@ elif page == "Incident Intelligence":
             )
 
             if filtered_incident_frame.empty:
-                st.info(
-                    "No incidents match the "
-                    "selected operational filters."
-                )
+                st.info("No incidents match the selected operational filters.")
                 st.stop()
 
-            display_incident_frame = (
-                filtered_incident_frame.copy()
-            )
+            display_incident_frame = filtered_incident_frame.copy()
 
-            display_incident_frame[
-                "Status"
-            ] = (
-                display_incident_frame[
-                    "Status"
-                ]
+            display_incident_frame["Status"] = (
+                display_incident_frame["Status"]
                 .str.replace(
                     "_",
                     " ",
@@ -4513,9 +3775,7 @@ elif page == "Incident Intelligence":
                 .str.title()
             )
 
-            st.subheader(
-                "Grouped Incident Register"
-            )
+            st.subheader("Grouped Incident Register")
 
             display_columns = [
                 "Incident Code",
@@ -4532,9 +3792,7 @@ elif page == "Incident Intelligence":
             ]
 
             st.dataframe(
-                display_incident_frame[
-                    display_columns
-                ].sort_values(
+                display_incident_frame[display_columns].sort_values(
                     by=[
                         "Peak Risk",
                         "Duration",
@@ -4566,35 +3824,27 @@ elif page == "Incident Intelligence":
                     "Duration": (
                         st.column_config.NumberColumn(
                             "Duration",
-                            help=(
-                                "Number of anomalous "
-                                "segments grouped into "
-                                "this incident."
-                            ),
+                            help=("Number of anomalous segments grouped into this incident."),
                         )
                     ),
                 },
             )
 
-            channel_summary = (
-                filtered_incident_frame
-                .groupby(
-                    [
-                        "Channel",
-                        "Severity",
-                    ],
-                    as_index=False,
-                )
-                .agg(
-                    Incidents=(
-                        "Incident Code",
-                        "count",
-                    ),
-                    Peak_Risk=(
-                        "Peak Risk",
-                        "max",
-                    ),
-                )
+            channel_summary = filtered_incident_frame.groupby(
+                [
+                    "Channel",
+                    "Severity",
+                ],
+                as_index=False,
+            ).agg(
+                Incidents=(
+                    "Incident Code",
+                    "count",
+                ),
+                Peak_Risk=(
+                    "Peak Risk",
+                    "max",
+                ),
             )
 
             channel_chart = px.bar(
@@ -4602,10 +3852,7 @@ elif page == "Incident Intelligence":
                 x="Channel",
                 y="Incidents",
                 color="Severity",
-                title=(
-                    "Filtered Grouped Incidents "
-                    "by Telemetry Channel"
-                ),
+                title=("Filtered Grouped Incidents by Telemetry Channel"),
                 hover_data=[
                     "Peak_Risk",
                 ],
@@ -4616,49 +3863,23 @@ elif page == "Incident Intelligence":
                 },
             )
 
-            show_chart(
-                channel_chart
+            show_chart(channel_chart)
+
+            st.subheader("Inspect a Grouped Incident")
+
+            selected_incident_code = st.selectbox(
+                "Incident",
+                filtered_incident_frame.sort_values(
+                    "Peak Risk",
+                    ascending=False,
+                )["Incident Code"].tolist(),
             )
 
-            st.subheader(
-                "Inspect a Grouped Incident"
-            )
+            selected_incident = incident_lookup[selected_incident_code]
 
-            selected_incident_code = (
-                st.selectbox(
-                    "Incident",
-                    filtered_incident_frame
-                    .sort_values(
-                        "Peak Risk",
-                        ascending=False,
-                    )[
-                        "Incident Code"
-                    ]
-                    .tolist(),
-                )
-            )
+            selected_metadata = safe_json_dictionary(selected_incident.get("metadata"))
 
-            selected_incident = (
-                incident_lookup[
-                    selected_incident_code
-                ]
-            )
-
-            selected_metadata = (
-                safe_json_dictionary(
-                    selected_incident.get(
-                        "metadata"
-                    )
-                )
-            )
-
-            selected_segments = (
-                safe_json_list(
-                    selected_metadata.get(
-                        "segment_ids"
-                    )
-                )
-            )
+            selected_segments = safe_json_list(selected_metadata.get("segment_ids"))
 
             selected_channel = str(
                 selected_metadata.get(
@@ -4675,26 +3896,12 @@ elif page == "Incident Intelligence":
             )
 
             selected_duration = int(
-                selected_incident.get(
-                    "duration_samples"
-                )
-                or len(selected_segments)
-                or 1
+                selected_incident.get("duration_samples") or len(selected_segments) or 1
             )
 
-            selected_peak_risk = float(
-                selected_incident.get(
-                    "peak_risk_score"
-                )
-                or 0.0
-            )
+            selected_peak_risk = float(selected_incident.get("peak_risk_score") or 0.0)
 
-            selected_peak_confidence = float(
-                selected_incident.get(
-                    "peak_confidence"
-                )
-                or 0.0
-            )
+            selected_peak_confidence = float(selected_incident.get("peak_confidence") or 0.0)
 
             selected_status = str(
                 selected_incident.get(
@@ -4703,9 +3910,7 @@ elif page == "Incident Intelligence":
                 )
             )
 
-            detail_1, detail_2, detail_3, detail_4, detail_5 = (
-                st.columns(5)
-            )
+            detail_1, detail_2, detail_3, detail_4, detail_5 = st.columns(5)
 
             detail_1.metric(
                 "Severity",
@@ -4719,18 +3924,12 @@ elif page == "Incident Intelligence":
 
             detail_3.metric(
                 "Peak Risk",
-                (
-                    f"{selected_peak_risk:.2f}"
-                    "/100"
-                ),
+                (f"{selected_peak_risk:.2f}/100"),
             )
 
             detail_4.metric(
                 "Peak Confidence",
-                (
-                    f"{selected_peak_confidence:.2f}"
-                    "%"
-                ),
+                (f"{selected_peak_confidence:.2f}%"),
             )
 
             detail_5.metric(
@@ -4741,26 +3940,17 @@ elif page == "Incident Intelligence":
                 ).title(),
             )
 
-            start_segment = (
-                selected_metadata.get(
-                    "start_segment",
-                    "Unknown",
-                )
+            start_segment = selected_metadata.get(
+                "start_segment",
+                "Unknown",
             )
 
-            end_segment = (
-                selected_metadata.get(
-                    "end_segment",
-                    "Unknown",
-                )
+            end_segment = selected_metadata.get(
+                "end_segment",
+                "Unknown",
             )
 
-            top_feature = str(
-                selected_incident.get(
-                    "top_feature"
-                )
-                or "Unknown"
-            )
+            top_feature = str(selected_incident.get("top_feature") or "Unknown")
 
             st.markdown(
                 f"""
@@ -4793,43 +3983,28 @@ It is not a confirmed spacecraft hardware failure.
             )
 
             incident_summary = str(
-                selected_incident.get(
-                    "summary"
-                )
-                or (
-                    "No incident summary "
-                    "was stored."
-                )
+                selected_incident.get("summary") or ("No incident summary was stored.")
             )
 
-            st.subheader(
-                "Incident Summary"
-            )
+            st.subheader("Incident Summary")
 
-            st.info(
-                incident_summary
-            )
+            st.info(incident_summary)
 
-            if bool(
-                selected_incident.get(
-                    "human_review_required"
+            if bool(selected_incident.get("human_review_required")):
+                st.warning("This grouped incident requires human mission-control review.")
+
+            st.subheader("Operator Review Workflow")
+
+            current_incident_status = (
+                str(
+                    selected_incident.get(
+                        "status",
+                        "open",
+                    )
                 )
-            ):
-                st.warning(
-                    "This grouped incident requires "
-                    "human mission-control review."
-                )
-
-            st.subheader(
-                "Operator Review Workflow"
+                .strip()
+                .lower()
             )
-
-            current_incident_status = str(
-                selected_incident.get(
-                    "status",
-                    "open",
-                )
-            ).strip().lower()
 
             incident_status_options = [
                 "open",
@@ -4840,11 +4015,7 @@ It is not a confirmed spacecraft hardware failure.
             ]
 
             try:
-                current_status_index = (
-                    incident_status_options.index(
-                        current_incident_status
-                    )
-                )
+                current_status_index = incident_status_options.index(current_incident_status)
 
             except ValueError:
                 current_status_index = 0
@@ -4863,55 +4034,31 @@ It is not a confirmed spacecraft hardware failure.
                 )
             )
 
-            review_flash_key = (
-                "incident_review_flash_"
-                + selected_incident_code
-            )
+            review_flash_key = "incident_review_flash_" + selected_incident_code
 
-            review_flash_message = (
-                st.session_state.pop(
-                    review_flash_key,
-                    None,
-                )
+            review_flash_message = st.session_state.pop(
+                review_flash_key,
+                None,
             )
 
             if review_flash_message:
-                st.success(
-                    str(
-                        review_flash_message
-                    )
-                )
+                st.success(str(review_flash_message))
 
-            with st.form(
-                key=(
-                    "incident_review_form_"
-                    + selected_incident_code
-                )
-            ):
-                selected_review_status = (
-                    st.selectbox(
-                        "Incident Status",
-                        options=(
-                            incident_status_options
-                        ),
-                        index=(
-                            current_status_index
-                        ),
-                        format_func=lambda value: (
-                            value.replace(
-                                "_",
-                                " ",
-                            ).title()
-                        ),
-                    )
+            with st.form(key=("incident_review_form_" + selected_incident_code)):
+                selected_review_status = st.selectbox(
+                    "Incident Status",
+                    options=(incident_status_options),
+                    index=(current_status_index),
+                    format_func=lambda value: value.replace(
+                        "_",
+                        " ",
+                    ).title(),
                 )
 
                 operator_name = st.text_input(
                     "Operator Name",
                     value=current_operator_name,
-                    placeholder=(
-                        "Example: Mission Controller"
-                    ),
+                    placeholder=("Example: Mission Controller"),
                 )
 
                 operator_note = st.text_area(
@@ -4919,123 +4066,71 @@ It is not a confirmed spacecraft hardware failure.
                     value=current_operator_note,
                     height=130,
                     placeholder=(
-                        "Describe the review decision, "
-                        "observed evidence, and required action."
+                        "Describe the review decision, observed evidence, and required action."
                     ),
                 )
 
-                save_operator_review = (
-                    st.form_submit_button(
-                        "Save Operator Review",
-                        **stretch_width_kwargs(st.form_submit_button),
-                    )
+                save_operator_review = st.form_submit_button(
+                    "Save Operator Review",
+                    **stretch_width_kwargs(st.form_submit_button),
                 )
 
             if save_operator_review:
-                clean_operator_name = (
-                    operator_name.strip()
-                )
+                clean_operator_name = operator_name.strip()
 
-                clean_operator_note = (
-                    operator_note.strip()
-                )
+                clean_operator_note = operator_note.strip()
 
                 if not clean_operator_name:
-                    st.error(
-                        "Operator name is required."
-                    )
+                    st.error("Operator name is required.")
 
                 elif not clean_operator_note:
-                    st.error(
-                        "Operator note is required."
-                    )
+                    st.error("Operator note is required.")
 
                 else:
                     try:
-                        incident_id = to_uuid(
-                            selected_incident[
-                                "id"
-                            ]
-                        )
+                        incident_id = to_uuid(selected_incident["id"])
 
                         updated_incident = update_incident_review(
                             incident_id=incident_id,
-                            status=(
-                                selected_review_status
-                            ),
-                            operator_name=(
-                                clean_operator_name
-                            ),
-                            operator_note=(
-                                clean_operator_note
-                            ),
+                            status=(selected_review_status),
+                            operator_name=(clean_operator_name),
+                            operator_note=(clean_operator_note),
                         )
 
-                        analysis_run_id = to_uuid(
-                            updated_incident[
-                                "analysis_run_id"
-                            ]
-                        )
+                        analysis_run_id = to_uuid(updated_incident["analysis_run_id"])
 
-                        refreshed_incidents = list_incidents(
-                            analysis_run_id
-                        )
+                        refreshed_incidents = list_incidents(analysis_run_id)
 
-                        refreshed_health = (
-                            calculate_mission_health_score(
-                                frame=analysis,
-                                incidents=refreshed_incidents,
-                            )
+                        refreshed_health = calculate_mission_health_score(
+                            frame=analysis,
+                            incidents=refreshed_incidents,
                         )
 
                         _ = update_analysis_run_mission_health(
                             analysis_run_id=analysis_run_id,
-                            mission_health_score=float(
-                                refreshed_health["score"]
-                            ),
+                            mission_health_score=float(refreshed_health["score"]),
                             health_snapshot=refreshed_health,
                         )
 
-                        st.session_state[
-                            "opssat_database_incidents"
-                        ] = refreshed_incidents
+                        st.session_state["opssat_database_incidents"] = refreshed_incidents
 
-                        st.session_state[
-                            review_flash_key
-                        ] = (
-                            "Incident review saved "
-                            "successfully to PostgreSQL."
+                        st.session_state[review_flash_key] = (
+                            "Incident review saved successfully to PostgreSQL."
                         )
 
                         st.rerun()
 
                     except Exception as exc:
-                        st.error(
-                            "Incident review could not "
-                            "be saved."
-                        )
+                        st.error("Incident review could not be saved.")
 
-                        st.caption(
-                            f"{type(exc).__name__}: "
-                            f"{exc}"
-                        )
+                        st.caption(f"{type(exc).__name__}: {exc}")
 
-            review_history = safe_json_list(
-                selected_metadata.get(
-                    "review_history"
-                )
-            )
+            review_history = safe_json_list(selected_metadata.get("review_history"))
 
             if review_history:
-                st.subheader(
-                    "Operator Review History"
-                )
+                st.subheader("Operator Review History")
 
-                review_history_frame = (
-                    pd.DataFrame(
-                        review_history
-                    )
-                )
+                review_history_frame = pd.DataFrame(review_history)
 
                 preferred_history_columns = [
                     "reviewed_at",
@@ -5047,116 +4142,60 @@ It is not a confirmed spacecraft hardware failure.
 
                 available_history_columns = [
                     column
-                    for column
-                    in preferred_history_columns
-                    if column
-                    in review_history_frame.columns
+                    for column in preferred_history_columns
+                    if column in review_history_frame.columns
                 ]
 
                 if available_history_columns:
-                    review_history_frame = (
-                        review_history_frame[
-                            available_history_columns
-                        ]
-                    )
+                    review_history_frame = review_history_frame[available_history_columns]
 
-                review_history_frame = (
-                    review_history_frame.rename(
-                        columns={
-                            "reviewed_at": (
-                                "Reviewed At"
-                            ),
-                            "operator_name": (
-                                "Operator"
-                            ),
-                            "previous_status": (
-                                "Previous Status"
-                            ),
-                            "new_status": (
-                                "New Status"
-                            ),
-                            "operator_note": (
-                                "Operator Note"
-                            ),
-                        }
-                    )
+                review_history_frame = review_history_frame.rename(
+                    columns={
+                        "reviewed_at": ("Reviewed At"),
+                        "operator_name": ("Operator"),
+                        "previous_status": ("Previous Status"),
+                        "new_status": ("New Status"),
+                        "operator_note": ("Operator Note"),
+                    }
                 )
 
                 st.dataframe(
-                    review_history_frame.iloc[
-                        ::-1
-                    ],
+                    review_history_frame.iloc[::-1],
                     **stretch_width_kwargs(st.dataframe),
                     hide_index=True,
                 )
 
             else:
-                st.info(
-                    "No operator review has been "
-                    "recorded for this incident yet."
-                )
+                st.info("No operator review has been recorded for this incident yet.")
 
             if selected_segments:
-                st.subheader(
-                    "Grouped Segment IDs"
-                )
+                st.subheader("Grouped Segment IDs")
 
                 st.code(
-                    ", ".join(
-                        str(segment_id)
-                        for segment_id
-                        in selected_segments
-                    ),
+                    ", ".join(str(segment_id) for segment_id in selected_segments),
                     language="text",
                 )
 
-            peak_sample_index = (
-                selected_metadata.get(
-                    "peak_sample_index"
-                )
-            )
+            peak_sample_index = selected_metadata.get("peak_sample_index")
 
             peak_rows = pd.DataFrame()
 
-            if (
-                peak_sample_index is not None
-                and "sample_index"
-                in analysis.columns
-            ):
-                numeric_sample_indexes = (
-                    pd.to_numeric(
-                        analysis[
-                            "sample_index"
-                        ],
-                        errors="coerce",
-                    )
+            if peak_sample_index is not None and "sample_index" in analysis.columns:
+                numeric_sample_indexes = pd.to_numeric(
+                    analysis["sample_index"],
+                    errors="coerce",
                 )
 
-                peak_rows = analysis.loc[
-                    numeric_sample_indexes
-                    == int(
-                        peak_sample_index
-                    )
-                ]
+                peak_rows = analysis.loc[numeric_sample_indexes == int(peak_sample_index)]
 
-            if (
-                peak_rows.empty
-                and start_segment
-                != "Unknown"
-            ):
-                numeric_segments = (
-                    pd.to_numeric(
-                        analysis[
-                            "segment"
-                        ],
-                        errors="coerce",
-                    )
+            if peak_rows.empty and start_segment != "Unknown":
+                numeric_segments = pd.to_numeric(
+                    analysis["segment"],
+                    errors="coerce",
                 )
 
                 try:
-                    start_segment_number = int(
-                        start_segment
-                    )
+                    start_segment_number = int(start_segment)
 
                 except (
                     TypeError,
@@ -5165,75 +4204,41 @@ It is not a confirmed spacecraft hardware failure.
                     start_segment_number = None
 
                 if start_segment_number is not None:
-                    peak_rows = analysis.loc[
-                        numeric_segments
-                        == start_segment_number
-                    ]
+                    peak_rows = analysis.loc[numeric_segments == start_segment_number]
 
             if not peak_rows.empty:
-                peak_row = (
-                    peak_rows
-                    .sort_values(
-                        "hybrid_score",
-                        ascending=False,
-                    )
-                    .iloc[0]
-                )
+                peak_row = peak_rows.sort_values(
+                    "hybrid_score",
+                    ascending=False,
+                ).iloc[0]
 
-                st.subheader(
-                    "Peak Segment Evidence"
-                )
+                st.subheader("Peak Segment Evidence")
 
-                evidence_1, evidence_2, evidence_3, evidence_4 = (
-                    st.columns(4)
-                )
+                evidence_1, evidence_2, evidence_3, evidence_4 = st.columns(4)
 
                 evidence_1.metric(
                     "Segment",
-                    int(
-                        peak_row[
-                            "segment"
-                        ]
-                    ),
+                    int(peak_row["segment"]),
                 )
 
                 evidence_2.metric(
                     "Hybrid Risk",
-                    (
-                        f"{float(peak_row['hybrid_score']):.2f}"
-                        "/100"
-                    ),
+                    (f"{float(peak_row['hybrid_score']):.2f}/100"),
                 )
 
                 evidence_3.metric(
                     "Supervised Score",
-                    (
-                        f"{float(peak_row['supervised_score']):.2f}"
-                        "%"
-                    ),
+                    (f"{float(peak_row['supervised_score']):.2f}%"),
                 )
 
                 evidence_4.metric(
                     "Decision Margin",
-                    (
-                        f"{float(peak_row['decision_margin']):.2f}"
-                        "/100"
-                    ),
+                    (f"{float(peak_row['decision_margin']):.2f}/100"),
                 )
 
-                st.info(
-                    str(
-                        peak_row[
-                            "explanation"
-                        ]
-                    )
-                )
+                st.info(str(peak_row["explanation"]))
 
-                contributions = (
-                    peak_row[
-                        "feature_contributions"
-                    ]
-                )
+                contributions = peak_row["feature_contributions"]
 
                 if isinstance(
                     contributions,
@@ -5250,19 +4255,18 @@ It is not a confirmed spacecraft hardware failure.
                     except json.JSONDecodeError:
                         contributions = {}
 
-                if isinstance(
-                    contributions,
-                    dict,
-                ) and contributions:
+                if (
+                    isinstance(
+                        contributions,
+                        dict,
+                    )
+                    and contributions
+                ):
                     contribution_frame = (
                         pd.DataFrame(
                             {
-                                "Feature": list(
-                                    contributions.keys()
-                                ),
-                                "Contribution": list(
-                                    contributions.values()
-                                ),
+                                "Feature": list(contributions.keys()),
+                                "Contribution": list(contributions.values()),
                             }
                         )
                         .sort_values(
@@ -5278,25 +4282,16 @@ It is not a confirmed spacecraft hardware failure.
                         y="Feature",
                         orientation="h",
                         text="Contribution",
-                        title=(
-                            "Peak Segment Feature "
-                            "Contribution"
-                        ),
+                        title=("Peak Segment Feature Contribution"),
                     )
 
                     contribution_chart.update_traces(
-                        texttemplate=(
-                            "%{text:.1f}%"
-                        ),
+                        texttemplate=("%{text:.1f}%"),
                         textposition="outside",
-                        marker_color=(
-                            theme["info"]
-                        ),
+                        marker_color=(theme["info"]),
                     )
 
-                    show_chart(
-                        contribution_chart
-                    )
+                    show_chart(contribution_chart)
 
             else:
                 st.info(
@@ -5314,13 +4309,10 @@ It is not a confirmed spacecraft hardware failure.
         )
 
         candidates = (
-            analysis
-            .sort_values(
+            analysis.sort_values(
                 "hybrid_score",
                 ascending=False,
-            )[
-                "segment"
-            ]
+            )["segment"]
             .astype(int)
             .tolist()
         )
@@ -5330,14 +4322,7 @@ It is not a confirmed spacecraft hardware failure.
             candidates,
         )
 
-        row = analysis[
-            analysis[
-                "segment"
-            ].astype(int)
-            == int(
-                selected_segment
-            )
-        ].iloc[0]
+        row = analysis[analysis["segment"].astype(int) == int(selected_segment)].iloc[0]
 
         c1, c2, c3, c4 = st.columns(4)
 
@@ -5361,19 +4346,11 @@ It is not a confirmed spacecraft hardware failure.
             f"{row['decision_margin']:.1f}/100",
         )
 
-        st.subheader(
-            "Observed Evidence"
-        )
+        st.subheader("Observed Evidence")
 
-        st.info(
-            str(
-                row["explanation"]
-            )
-        )
+        st.info(str(row["explanation"]))
 
-        contributions = row[
-            "feature_contributions"
-        ]
+        contributions = row["feature_contributions"]
 
         if isinstance(
             contributions,
@@ -5389,12 +4366,8 @@ It is not a confirmed spacecraft hardware failure.
         contribution_frame = (
             pd.DataFrame(
                 {
-                    "Feature": list(
-                        contributions.keys()
-                    ),
-                    "Contribution": list(
-                        contributions.values()
-                    ),
+                    "Feature": list(contributions.keys()),
+                    "Contribution": list(contributions.values()),
                 }
             )
             .sort_values(
@@ -5420,29 +4393,25 @@ It is not a confirmed spacecraft hardware failure.
             marker_color=theme["info"],
         )
 
-        show_chart(
-            fig
-        )
+        show_chart(fig)
 
-        st.subheader(
-            "Decision Context"
-        )
+        st.subheader("Decision Context")
 
         st.markdown(
             f"""
 <div class="card">
 <b>Channel:</b>
-{html.escape(CHANNEL_NAMES.get(str(row['channel']), str(row['channel'])))}
-({html.escape(str(row['channel']))})
+{html.escape(CHANNEL_NAMES.get(str(row["channel"]), str(row["channel"])))}
+({html.escape(str(row["channel"]))})
 <br>
 <b>Top feature:</b>
-{html.escape(str(row['top_feature']))}
+{html.escape(str(row["top_feature"]))}
 <br>
 <b>Isolation score:</b>
-{float(row['isolation_score']):.1f}/100
+{float(row["isolation_score"]):.1f}/100
 <br>
 <b>Supervised score:</b>
-{float(row['supervised_score']):.1f}/100
+{float(row["supervised_score"]):.1f}/100
 <br>
 <b>Human interpretation:</b>
 This is a segment-level anomaly decision.
@@ -5469,7 +4438,9 @@ elif page == "Upload & Test":
         c5.metric("Label Coverage", f"{upload_validation.label_coverage:.0%}")
 
         if upload_validation.removed_rows:
-            st.warning(f"Validation removed {upload_validation.removed_rows} invalid or duplicate row(s).")
+            st.warning(
+                f"Validation removed {upload_validation.removed_rows} invalid or duplicate row(s)."
+            )
         for message in upload_validation.messages:
             st.warning(message)
         for warning in compatibility["warnings"]:
@@ -5482,15 +4453,9 @@ elif page == "Upload & Test":
         d3.metric("Drift Compatibility", drift_summary["compatibility"])
         d4.metric("Drift Score", f"{drift_summary['overall_score']:.2f}")
 
-        st.subheader(
-            "PostgreSQL Persistence"
-        )
+        st.subheader("PostgreSQL Persistence")
 
-        upload_database_result = (
-            st.session_state[
-                "opssat_upload_save_result"
-            ]
-        )
+        upload_database_result = st.session_state["opssat_upload_save_result"]
 
         upload_is_persisted = (
             isinstance(
@@ -5498,10 +4463,7 @@ elif page == "Upload & Test":
                 dict,
             )
             and upload_signature is not None
-            and upload_database_result.get(
-                "upload_signature"
-            )
-            == upload_signature
+            and upload_database_result.get("upload_signature") == upload_signature
         )
 
         if upload_is_persisted:
@@ -5511,56 +4473,30 @@ elif page == "Upload & Test":
                 "grouped incidents are persisted."
             )
 
-            persistence_1, persistence_2, persistence_3 = (
-                st.columns(3)
-            )
+            persistence_1, persistence_2, persistence_3 = st.columns(3)
 
             persistence_1.metric(
                 "Saved Predictions",
-                int(
-                    upload_database_result[
-                        "total_predictions"
-                    ]
-                ),
+                int(upload_database_result["total_predictions"]),
             )
 
             persistence_2.metric(
                 "Detected Anomalies",
-                int(
-                    upload_database_result[
-                        "total_anomalies"
-                    ]
-                ),
+                int(upload_database_result["total_anomalies"]),
             )
 
             persistence_3.metric(
                 "Grouped Incidents",
-                int(
-                    upload_database_result[
-                        "total_incidents"
-                    ]
-                ),
+                int(upload_database_result["total_incidents"]),
             )
 
             st.caption(
                 "Dataset ID: "
-                + str(
-                    upload_database_result[
-                        "dataset_id"
-                    ]
-                )
+                + str(upload_database_result["dataset_id"])
                 + " · Session ID: "
-                + str(
-                    upload_database_result[
-                        "telemetry_session_id"
-                    ]
-                )
+                + str(upload_database_result["telemetry_session_id"])
                 + " · Run ID: "
-                + str(
-                    upload_database_result[
-                        "analysis_run_id"
-                    ]
-                )
+                + str(upload_database_result["analysis_run_id"])
             )
 
         else:
@@ -5571,10 +4507,18 @@ elif page == "Upload & Test":
 
         st.subheader("Upload Predictions")
         display_columns = [
-            "segment", "channel", "prediction_label", "risk_level", "hybrid_score",
-            "decision_margin", "top_feature", "anomaly",
+            "segment",
+            "channel",
+            "prediction_label",
+            "risk_level",
+            "hybrid_score",
+            "decision_margin",
+            "top_feature",
+            "anomaly",
         ]
-        st.dataframe(analysis[display_columns], **stretch_width_kwargs(st.dataframe), hide_index=True)
+        st.dataframe(
+            analysis[display_columns], **stretch_width_kwargs(st.dataframe), hide_index=True
+        )
 
         if row_evaluation is not None:
             st.subheader("Ground-Truth Segment Evaluation")
@@ -5605,13 +4549,25 @@ elif page == "Upload & Test":
             metric_table = pd.DataFrame(
                 {
                     "Metric": [
-                        "Accuracy", "Balanced Accuracy", "Precision", "Recall", "F1", "MCC",
-                        "PR-AUC", "ROC-AUC", "False Alarms / 1000",
+                        "Accuracy",
+                        "Balanced Accuracy",
+                        "Precision",
+                        "Recall",
+                        "F1",
+                        "MCC",
+                        "PR-AUC",
+                        "ROC-AUC",
+                        "False Alarms / 1000",
                     ],
                     "Value": [
-                        row_evaluation["Accuracy"], row_evaluation["Balanced Accuracy"],
-                        row_evaluation["Precision"], row_evaluation["Recall"], row_evaluation["F1"],
-                        row_evaluation["MCC"], row_evaluation["PR-AUC"], row_evaluation["ROC-AUC"],
+                        row_evaluation["Accuracy"],
+                        row_evaluation["Balanced Accuracy"],
+                        row_evaluation["Precision"],
+                        row_evaluation["Recall"],
+                        row_evaluation["F1"],
+                        row_evaluation["MCC"],
+                        row_evaluation["PR-AUC"],
+                        row_evaluation["ROC-AUC"],
                         row_evaluation["False Alarms / 1000"],
                     ],
                 }
@@ -5653,7 +4609,7 @@ elif page == "Upload & Test":
         sample_columns = st.columns(3)
         for column, (label, filename) in zip(
             sample_columns,
-            samples[row_start: row_start + 3],
+            samples[row_start : row_start + 3],
             strict=False,
         ):
             path = SAMPLES_DIR / filename
@@ -5672,8 +4628,20 @@ elif page == "Model Validation":
     st.write(
         "Thresholds were selected only inside the official training partition. The packaged results below are then calculated once on the unseen official OPSSAT-AD test split."
     )
-    metric_columns = ["Model", "Precision", "Recall", "F1", "MCC", "PR-AUC", "ROC-AUC", "False Alarms / 1000", "Threshold"]
-    st.dataframe(official_metrics[metric_columns], **stretch_width_kwargs(st.dataframe), hide_index=True)
+    metric_columns = [
+        "Model",
+        "Precision",
+        "Recall",
+        "F1",
+        "MCC",
+        "PR-AUC",
+        "ROC-AUC",
+        "False Alarms / 1000",
+        "Threshold",
+    ]
+    st.dataframe(
+        official_metrics[metric_columns], **stretch_width_kwargs(st.dataframe), hide_index=True
+    )
 
     chart_data = official_metrics.melt(
         id_vars="Model",
@@ -5704,7 +4672,9 @@ elif page == "Model Validation":
     )
     show_chart(fig)
 
-    train_counts = official_dataset.groupby(["train", "anomaly"]).size().reset_index(name="Segments")
+    train_counts = (
+        official_dataset.groupby(["train", "anomaly"]).size().reset_index(name="Segments")
+    )
     train_counts["Split"] = train_counts["train"].map({1: "Official Train", 0: "Official Test"})
     train_counts["Label"] = train_counts["anomaly"].map({1: "Anomaly", 0: "Normal"})
     st.caption("Official Split and Label Distribution")
@@ -5857,8 +4827,20 @@ elif page == "Reports & Responsible AI":
     html_report = "<html><body><pre>" + html.escape(text_report) + "</pre></body></html>"
 
     c1, c2, c3 = st.columns(3)
-    c1.download_button("Download TXT report", text_report, "missionguard_opssat_report.txt", "text/plain", **stretch_width_kwargs(st.download_button))
-    c2.download_button("Download HTML report", html_report, "missionguard_opssat_report.html", "text/html", **stretch_width_kwargs(st.download_button))
+    c1.download_button(
+        "Download TXT report",
+        text_report,
+        "missionguard_opssat_report.txt",
+        "text/plain",
+        **stretch_width_kwargs(st.download_button),
+    )
+    c2.download_button(
+        "Download HTML report",
+        html_report,
+        "missionguard_opssat_report.html",
+        "text/html",
+        **stretch_width_kwargs(st.download_button),
+    )
     c3.download_button(
         "Download analyzed CSV",
         analysis.to_csv(index=False).encode("utf-8"),
@@ -5904,8 +4886,14 @@ MissionGuard AI uses the OPSSAT-AD benchmark containing real telemetry acquired 
     channel_frame = pd.DataFrame(
         {
             "Channel ID": sorted(official_dataset["channel"].unique()),
-            "Documented Signal": [CHANNEL_NAMES.get(channel, "Unknown") for channel in sorted(official_dataset["channel"].unique())],
-            "Segments": [int((official_dataset["channel"] == channel).sum()) for channel in sorted(official_dataset["channel"].unique())],
+            "Documented Signal": [
+                CHANNEL_NAMES.get(channel, "Unknown")
+                for channel in sorted(official_dataset["channel"].unique())
+            ],
+            "Segments": [
+                int((official_dataset["channel"] == channel).sum())
+                for channel in sorted(official_dataset["channel"].unique())
+            ],
         }
     )
     st.dataframe(channel_frame, **stretch_width_kwargs(st.dataframe), hide_index=True)
@@ -5998,7 +4986,9 @@ elif page == "IBM Bob Evidence":
     if log_path.exists():
         st.markdown(log_path.read_text(encoding="utf-8"))
     else:
-        st.info("Add documented IBM Bob prompts and verified development outcomes to `docs/ibm-bob-development-log.md`.")
+        st.info(
+            "Add documented IBM Bob prompts and verified development outcomes to `docs/ibm-bob-development-log.md`."
+        )
 
 st.markdown("<div style='height: 1.25rem;'></div>", unsafe_allow_html=True)
 st.divider()

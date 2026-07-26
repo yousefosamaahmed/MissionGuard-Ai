@@ -37,10 +37,7 @@ def main() -> None:
             return
         except Exception as error:
             last_error = error
-            print(
-                f"Waiting for PostgreSQL ({attempt}/{attempts}): "
-                f"{type(error).__name__}"
-            )
+            print(f"Waiting for PostgreSQL ({attempt}/{attempts}): {type(error).__name__}")
             time.sleep(delay_seconds)
 
     raise RuntimeError(

@@ -25,9 +25,7 @@ def get_table(table_name: str) -> Table:
     """
 
     if not table_name.strip():
-        raise ValueError(
-            "Table name cannot be empty."
-        )
+        raise ValueError("Table name cannot be empty.")
 
     if engine is None:
         raise RuntimeError(database_status_message())

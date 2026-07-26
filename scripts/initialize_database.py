@@ -69,13 +69,7 @@ def _ensure_official_dataset() -> tuple[UUID, UUID]:
     dataset = _find_dataset()
 
     if dataset is None:
-        csv_file_path = (
-            PROJECT_ROOT
-            / "data"
-            / "opssat"
-            / "processed"
-            / "validation_features.csv"
-        )
+        csv_file_path = PROJECT_ROOT / "data" / "opssat" / "processed" / "validation_features.csv"
         result = import_opssat_feature_csv(
             mission_id=mission_id,
             csv_file_path=csv_file_path,
@@ -91,11 +85,7 @@ def _ensure_official_dataset() -> tuple[UUID, UUID]:
     dataset_id = _to_uuid(dataset["id"])
     sessions = list_telemetry_sessions(dataset_id=dataset_id)
 
-    official_sessions = [
-        session
-        for session in sessions
-        if session.get("source_type") == "opssat"
-    ]
+    official_sessions = [session for session in sessions if session.get("source_type") == "opssat"]
 
     if not official_sessions:
         raise RuntimeError(
@@ -117,9 +107,7 @@ def _register_metrics_and_artifacts(dataset_id: UUID) -> None:
     validate_metrics_dataframe(dataframe)
 
     artifact_map = {
-        "OPSSAT Isolation Forest": (
-            PROJECT_ROOT / "models" / "opssat_isolation_bundle.joblib"
-        ),
+        "OPSSAT Isolation Forest": (PROJECT_ROOT / "models" / "opssat_isolation_bundle.joblib"),
         "OPSSAT Supervised Random Forest": (
             PROJECT_ROOT / "models" / "opssat_supervised_bundle.joblib"
         ),
@@ -146,10 +134,7 @@ def _register_metrics_and_artifacts(dataset_id: UUID) -> None:
                 },
             )
 
-        print(
-            f"Registered {model_name}: model={model_version_id}, "
-            f"metric={metric_id}"
-        )
+        print(f"Registered {model_name}: model={model_version_id}, metric={metric_id}")
 
 
 def main() -> None:

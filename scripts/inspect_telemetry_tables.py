@@ -37,9 +37,7 @@ def print_table_information(
     inspector = inspect(engine)
 
     print("\n" + "=" * 80)
-    print(
-        f"TABLE: {POSTGRES_SCHEMA}.{table_name}"
-    )
+    print(f"TABLE: {POSTGRES_SCHEMA}.{table_name}")
     print("=" * 80)
 
     table_exists = inspector.has_table(
@@ -79,10 +77,7 @@ def print_table_information(
     )
 
     if primary_key_columns:
-        print(
-            "- "
-            + ", ".join(primary_key_columns)
-        )
+        print("- " + ", ".join(primary_key_columns))
 
     else:
         print("- No primary key found.")
@@ -116,19 +111,11 @@ def print_table_information(
             [],
         )
 
-        print(
-            f"- {local_columns}"
-            f" -> "
-            f"{referenced_schema}."
-            f"{referenced_table}"
-            f"{referenced_columns}"
-        )
+        print(f"- {local_columns} -> {referenced_schema}.{referenced_table}{referenced_columns}")
 
-    unique_constraints = (
-        inspector.get_unique_constraints(
-            table_name,
-            schema=POSTGRES_SCHEMA,
-        )
+    unique_constraints = inspector.get_unique_constraints(
+        table_name,
+        schema=POSTGRES_SCHEMA,
     )
 
     print("\nUNIQUE CONSTRAINTS:")
@@ -137,11 +124,7 @@ def print_table_information(
         print("- No unique constraints found.")
 
     for constraint in unique_constraints:
-        print(
-            f"- name={constraint.get('name')!r}"
-            f" | columns="
-            f"{constraint.get('column_names', [])}"
-        )
+        print(f"- name={constraint.get('name')!r} | columns={constraint.get('column_names', [])}")
 
 
 def main() -> None:
@@ -149,15 +132,10 @@ def main() -> None:
     print("MissionGuard Telemetry Tables Inspection")
     print("=" * 80)
 
-    print(
-        f"PostgreSQL schema: "
-        f"{POSTGRES_SCHEMA}"
-    )
+    print(f"PostgreSQL schema: {POSTGRES_SCHEMA}")
 
     for table_name in TABLE_NAMES:
-        print_table_information(
-            table_name
-        )
+        print_table_information(table_name)
 
     print("\n" + "=" * 80)
     print("Inspection completed.")

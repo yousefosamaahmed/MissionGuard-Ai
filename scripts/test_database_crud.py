@@ -4,11 +4,7 @@ import sys
 from pathlib import Path
 from uuid import uuid4
 
-PROJECT_ROOT = (
-    Path(__file__)
-    .resolve()
-    .parents[1]
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(
@@ -29,72 +25,38 @@ def main() -> None:
     print("MissionGuard Database CRUD Test")
     print("=" * 60)
 
-    unique_code = (
-        "LOCAL-TEST-"
-        + uuid4().hex[:8].upper()
-    )
+    unique_code = "LOCAL-TEST-" + uuid4().hex[:8].upper()
 
-    print(
-        "\nCreating a new mission..."
-    )
+    print("\nCreating a new mission...")
 
     mission_id = create_mission(
-        name=(
-            "MissionGuard OPS-SAT "
-            "Local Test"
-        ),
+        name=("MissionGuard OPS-SAT Local Test"),
         mission_code=unique_code,
         spacecraft_name="ESA OPS-SAT",
-        description=(
-            "Local PostgreSQL repository "
-            "integration test."
-        ),
+        description=("Local PostgreSQL repository integration test."),
         status="active",
     )
 
-    print(
-        f"Created mission ID: "
-        f"{mission_id}"
-    )
+    print(f"Created mission ID: {mission_id}")
 
-    print(
-        "\nReading the created mission..."
-    )
+    print("\nReading the created mission...")
 
-    mission = get_mission(
-        mission_id
-    )
+    mission = get_mission(mission_id)
 
     if mission is None:
-        raise RuntimeError(
-            "The created mission could not be found."
-        )
+        raise RuntimeError("The created mission could not be found.")
 
-    print(
-        f"Mission name: "
-        f"{mission['name']}"
-    )
+    print(f"Mission name: {mission['name']}")
 
-    print(
-        f"Mission code: "
-        f"{mission['mission_code']}"
-    )
+    print(f"Mission code: {mission['mission_code']}")
 
-    print(
-        f"Mission status: "
-        f"{mission['status']}"
-    )
+    print(f"Mission status: {mission['status']}")
 
-    print(
-        "\nReading all missions..."
-    )
+    print("\nReading all missions...")
 
     missions = list_missions()
 
-    print(
-        f"Stored missions: "
-        f"{len(missions)}"
-    )
+    print(f"Stored missions: {len(missions)}")
 
     for stored_mission in missions:
         print(
@@ -106,9 +68,7 @@ def main() -> None:
             stored_mission["status"],
         )
 
-    print(
-        "\nCRUD test completed successfully."
-    )
+    print("\nCRUD test completed successfully.")
 
 
 if __name__ == "__main__":

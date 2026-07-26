@@ -24,11 +24,7 @@ from database.services.opssat_inference_service import (
     run_real_opssat_analysis,
 )
 
-ARTIFACT_PATH = (
-    PROJECT_ROOT
-    / "models"
-    / "opssat_model.joblib"
-)
+ARTIFACT_PATH = PROJECT_ROOT / "models" / "opssat_model.joblib"
 
 
 def to_uuid(
@@ -53,13 +49,9 @@ def find_latest_opssat_session_id() -> UUID:
 
     for session in sessions:
         if session.get("source_type") == "opssat":
-            return to_uuid(
-                session["id"]
-            )
+            return to_uuid(session["id"])
 
-    raise RuntimeError(
-        "No OPS-SAT telemetry session was found."
-    )
+    raise RuntimeError("No OPS-SAT telemetry session was found.")
 
 
 def find_hybrid_model_version_id() -> UUID:
@@ -70,18 +62,11 @@ def find_hybrid_model_version_id() -> UUID:
     models = list_model_versions()
 
     for model in models:
-        if (
-            model.get("model_name")
-            == "OPSSAT Hybrid"
-            and model.get("version") == "1.0"
-        ):
-            return to_uuid(
-                model["id"]
-            )
+        if model.get("model_name") == "OPSSAT Hybrid" and model.get("version") == "1.0":
+            return to_uuid(model["id"])
 
     raise RuntimeError(
-        "OPSSAT Hybrid version 1.0 was not found. "
-        "Run import_opssat_metrics.py first."
+        "OPSSAT Hybrid version 1.0 was not found. Run import_opssat_metrics.py first."
     )
 
 
@@ -91,39 +76,21 @@ def main() -> None:
     print("=" * 78)
 
     if not ARTIFACT_PATH.exists():
-        raise FileNotFoundError(
-            f"Artifact not found: {ARTIFACT_PATH}"
-        )
+        raise FileNotFoundError(f"Artifact not found: {ARTIFACT_PATH}")
 
-    print(
-        "\n1. Finding OPS-SAT telemetry session..."
-    )
+    print("\n1. Finding OPS-SAT telemetry session...")
 
-    telemetry_session_id = (
-        find_latest_opssat_session_id()
-    )
+    telemetry_session_id = find_latest_opssat_session_id()
 
-    print(
-        f"Telemetry session ID: "
-        f"{telemetry_session_id}"
-    )
+    print(f"Telemetry session ID: {telemetry_session_id}")
 
-    print(
-        "\n2. Finding Hybrid model version..."
-    )
+    print("\n2. Finding Hybrid model version...")
 
-    model_version_id = (
-        find_hybrid_model_version_id()
-    )
+    model_version_id = find_hybrid_model_version_id()
 
-    print(
-        f"Model version ID: "
-        f"{model_version_id}"
-    )
+    print(f"Model version ID: {model_version_id}")
 
-    print(
-        "\n3. Registering model artifact..."
-    )
+    print("\n3. Registering model artifact...")
 
     artifact_id = register_model_artifact(
         model_version_id=model_version_id,
@@ -131,76 +98,41 @@ def main() -> None:
         file_path=ARTIFACT_PATH,
         storage_provider="local",
         metadata={
-            "artifact_role": (
-                "complete_opssat_hybrid_bundle"
-            ),
+            "artifact_role": ("complete_opssat_hybrid_bundle"),
             "contains_isolation_model": True,
             "contains_supervised_model": True,
             "trusted_local_artifact": True,
         },
     )
 
-    print(
-        f"Artifact ID: {artifact_id}"
-    )
+    print(f"Artifact ID: {artifact_id}")
 
-    print(
-        "\n4. Running real model inference..."
-    )
+    print("\n4. Running real model inference...")
 
     result = run_real_opssat_analysis(
-        telemetry_session_id=(
-            telemetry_session_id
-        ),
-        model_version_id=(
-            model_version_id
-        ),
+        telemetry_session_id=(telemetry_session_id),
+        model_version_id=(model_version_id),
         artifact_path=ARTIFACT_PATH,
     )
 
-    print(
-        "\n5. Analysis result"
-    )
+    print("\n5. Analysis result")
 
-    print(
-        f"Analysis run ID: "
-        f"{result.analysis_run_id}"
-    )
+    print(f"Analysis run ID: {result.analysis_run_id}")
 
-    print(
-        f"Total predictions: "
-        f"{result.total_predictions}"
-    )
+    print(f"Total predictions: {result.total_predictions}")
 
-    print(
-        f"Detected anomalies: "
-        f"{result.total_anomalies}"
-    )
+    print(f"Detected anomalies: {result.total_anomalies}")
 
-    print(
-        f"Created incidents: "
-        f"{result.total_incidents}"
-    )
+    print(f"Created incidents: {result.total_incidents}")
 
-    print(
-        f"Mean risk score: "
-        f"{result.mean_risk_score:.2f}"
-    )
+    print(f"Mean risk score: {result.mean_risk_score:.2f}")
 
-    print(
-        f"Maximum risk score: "
-        f"{result.maximum_risk_score:.2f}"
-    )
+    print(f"Maximum risk score: {result.maximum_risk_score:.2f}")
 
     if result.total_predictions != 399:
-        raise RuntimeError(
-            "Expected 399 real predictions."
-        )
+        raise RuntimeError("Expected 399 real predictions.")
 
-    print(
-        "\nReal OPS-SAT analysis "
-        "completed successfully."
-    )
+    print("\nReal OPS-SAT analysis completed successfully.")
 
 
 if __name__ == "__main__":

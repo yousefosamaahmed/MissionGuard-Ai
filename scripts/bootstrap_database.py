@@ -47,11 +47,7 @@ def _ensure_database_exists() -> None:
             **maintenance_kwargs,
             autocommit=True,
         ) as connection:
-            connection.execute(
-                sql.SQL("CREATE DATABASE {}").format(
-                    sql.Identifier(database_name)
-                )
-            )
+            connection.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database_name)))
     except psycopg.Error as error:
         raise RuntimeError(
             "The target database is missing and the configured PostgreSQL "
@@ -96,8 +92,7 @@ def main() -> None:
 
     if missing_tables:
         raise RuntimeError(
-            "Database bootstrap completed with missing tables: "
-            + ", ".join(missing_tables)
+            "Database bootstrap completed with missing tables: " + ", ".join(missing_tables)
         )
 
     print(

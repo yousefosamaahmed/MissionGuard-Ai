@@ -69,9 +69,7 @@ def calculate_file_sha256(
     resolved_path = file_path.expanduser().resolve()
 
     if not resolved_path.exists():
-        raise FileNotFoundError(
-            f"Model artifact does not exist: {resolved_path}"
-        )
+        raise FileNotFoundError(f"Model artifact does not exist: {resolved_path}")
 
     digest = hashlib.sha256()
 
@@ -104,40 +102,23 @@ def create_model_version(
     clean_version = version.strip()
 
     if not clean_model_name:
-        raise ValueError(
-            "Model name cannot be empty."
-        )
+        raise ValueError("Model name cannot be empty.")
 
     if not clean_version:
-        raise ValueError(
-            "Model version cannot be empty."
-        )
+        raise ValueError("Model version cannot be empty.")
 
     if model_type not in VALID_MODEL_TYPES:
-        raise ValueError(
-            f"Invalid model type: {model_type}"
-        )
+        raise ValueError(f"Invalid model type: {model_type}")
 
     if status not in VALID_MODEL_STATUSES:
-        raise ValueError(
-            f"Invalid model status: {status}"
-        )
+        raise ValueError(f"Invalid model status: {status}")
 
-    if (
-        model_size_bytes is not None
-        and model_size_bytes < 0
-    ):
-        raise ValueError(
-            "Model size cannot be negative."
-        )
+    if model_size_bytes is not None and model_size_bytes < 0:
+        raise ValueError("Model size cannot be negative.")
 
-    model_versions = get_table(
-        "model_versions"
-    )
+    model_versions = get_table("model_versions")
 
-    insert_statement = pg_insert(
-        model_versions
-    ).values(
+    insert_statement = pg_insert(model_versions).values(
         model_name=clean_model_name,
         model_type=model_type,
         version=clean_version,
@@ -150,58 +131,24 @@ def create_model_version(
         metadata=metadata or {},
     )
 
-    statement = (
-        insert_statement
-        .on_conflict_do_update(
-            constraint="uq_model_name_version",
-            set_={
-                "model_type": (
-                    insert_statement.excluded.model_type
-                ),
-                "description": (
-                    insert_statement.excluded.description
-                ),
-                "training_dataset_id": (
-                    insert_statement
-                    .excluded
-                    .training_dataset_id
-                ),
-                "status": (
-                    insert_statement.excluded.status
-                ),
-                "feature_schema": (
-                    insert_statement
-                    .excluded
-                    .feature_schema
-                ),
-                "training_parameters": (
-                    insert_statement
-                    .excluded
-                    .training_parameters
-                ),
-                "model_size_bytes": (
-                    insert_statement
-                    .excluded
-                    .model_size_bytes
-                ),
-                "metadata": (
-                    insert_statement.excluded.metadata
-                ),
-            },
-        )
-        .returning(
-            model_versions.c.id
-        )
-    )
+    statement = insert_statement.on_conflict_do_update(
+        constraint="uq_model_name_version",
+        set_={
+            "model_type": (insert_statement.excluded.model_type),
+            "description": (insert_statement.excluded.description),
+            "training_dataset_id": (insert_statement.excluded.training_dataset_id),
+            "status": (insert_statement.excluded.status),
+            "feature_schema": (insert_statement.excluded.feature_schema),
+            "training_parameters": (insert_statement.excluded.training_parameters),
+            "model_size_bytes": (insert_statement.excluded.model_size_bytes),
+            "metadata": (insert_statement.excluded.metadata),
+        },
+    ).returning(model_versions.c.id)
 
     with database_session() as session:
-        model_version_id = session.execute(
-            statement
-        ).scalar_one()
+        model_version_id = session.execute(statement).scalar_one()
 
-    return _to_uuid(
-        model_version_id
-    )
+    return _to_uuid(model_version_id)
 
 
 def register_model_artifact(
@@ -219,91 +166,44 @@ def register_model_artifact(
     """
 
     if artifact_type not in VALID_ARTIFACT_TYPES:
-        raise ValueError(
-            f"Invalid artifact type: {artifact_type}"
-        )
+        raise ValueError(f"Invalid artifact type: {artifact_type}")
 
     if storage_provider not in VALID_STORAGE_PROVIDERS:
-        raise ValueError(
-            "Invalid storage provider: "
-            f"{storage_provider}"
-        )
+        raise ValueError(f"Invalid storage provider: {storage_provider}")
 
-    resolved_path = (
-        file_path
-        .expanduser()
-        .resolve()
-    )
+    resolved_path = file_path.expanduser().resolve()
 
     if not resolved_path.exists():
-        raise FileNotFoundError(
-            f"Model artifact not found: {resolved_path}"
-        )
+        raise FileNotFoundError(f"Model artifact not found: {resolved_path}")
 
-    model_artifacts = get_table(
-        "model_artifacts"
-    )
+    model_artifacts = get_table("model_artifacts")
 
-    file_path_value = str(
-        resolved_path
-    )
+    file_path_value = str(resolved_path)
 
-    insert_statement = pg_insert(
-        model_artifacts
-    ).values(
+    insert_statement = pg_insert(model_artifacts).values(
         model_version_id=model_version_id,
         artifact_type=artifact_type,
         file_path=file_path_value,
         storage_provider=storage_provider,
-        file_size_bytes=(
-            resolved_path.stat().st_size
-        ),
-        sha256_hash=calculate_file_sha256(
-            resolved_path
-        ),
+        file_size_bytes=(resolved_path.stat().st_size),
+        sha256_hash=calculate_file_sha256(resolved_path),
         metadata=metadata or {},
     )
 
-    statement = (
-        insert_statement
-        .on_conflict_do_update(
-            constraint="uq_model_artifact",
-            set_={
-                "storage_provider": (
-                    insert_statement
-                    .excluded
-                    .storage_provider
-                ),
-                "file_size_bytes": (
-                    insert_statement
-                    .excluded
-                    .file_size_bytes
-                ),
-                "sha256_hash": (
-                    insert_statement
-                    .excluded
-                    .sha256_hash
-                ),
-                "metadata": (
-                    insert_statement
-                    .excluded
-                    .metadata
-                ),
-            },
-        )
-        .returning(
-            model_artifacts.c.id
-        )
-    )
+    statement = insert_statement.on_conflict_do_update(
+        constraint="uq_model_artifact",
+        set_={
+            "storage_provider": (insert_statement.excluded.storage_provider),
+            "file_size_bytes": (insert_statement.excluded.file_size_bytes),
+            "sha256_hash": (insert_statement.excluded.sha256_hash),
+            "metadata": (insert_statement.excluded.metadata),
+        },
+    ).returning(model_artifacts.c.id)
 
     with database_session() as session:
-        artifact_id = session.execute(
-            statement
-        ).scalar_one()
+        artifact_id = session.execute(statement).scalar_one()
 
-    return _to_uuid(
-        artifact_id
-    )
+    return _to_uuid(artifact_id)
 
 
 def get_model_version(
@@ -313,24 +213,12 @@ def get_model_version(
     Return one model version by ID.
     """
 
-    model_versions = get_table(
-        "model_versions"
-    )
+    model_versions = get_table("model_versions")
 
-    statement = (
-        select(model_versions)
-        .where(
-            model_versions.c.id
-            == model_version_id
-        )
-    )
+    statement = select(model_versions).where(model_versions.c.id == model_version_id)
 
     with database_session() as session:
-        row = (
-            session.execute(statement)
-            .mappings()
-            .one_or_none()
-        )
+        row = session.execute(statement).mappings().one_or_none()
 
     if row is None:
         return None
@@ -343,31 +231,14 @@ def list_model_versions() -> list[dict[str, Any]]:
     Return model versions from newest to oldest.
     """
 
-    model_versions = get_table(
-        "model_versions"
-    )
+    model_versions = get_table("model_versions")
 
-    statement = (
-        select(model_versions)
-        .order_by(
-            model_versions
-            .c
-            .created_at
-            .desc()
-        )
-    )
+    statement = select(model_versions).order_by(model_versions.c.created_at.desc())
 
     with database_session() as session:
-        rows = (
-            session.execute(statement)
-            .mappings()
-            .all()
-        )
+        rows = session.execute(statement).mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]
 
 
 def list_model_artifacts(
@@ -377,32 +248,15 @@ def list_model_artifacts(
     Return artifacts registered for a model version.
     """
 
-    model_artifacts = get_table(
-        "model_artifacts"
-    )
+    model_artifacts = get_table("model_artifacts")
 
     statement = (
         select(model_artifacts)
-        .where(
-            model_artifacts.c.model_version_id
-            == model_version_id
-        )
-        .order_by(
-            model_artifacts
-            .c
-            .created_at
-            .asc()
-        )
+        .where(model_artifacts.c.model_version_id == model_version_id)
+        .order_by(model_artifacts.c.created_at.asc())
     )
 
     with database_session() as session:
-        rows = (
-            session.execute(statement)
-            .mappings()
-            .all()
-        )
+        rows = session.execute(statement).mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]

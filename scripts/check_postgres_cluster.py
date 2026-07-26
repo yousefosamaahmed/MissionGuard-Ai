@@ -34,9 +34,7 @@ def get_required_env(name: str) -> str:
     value = os.getenv(name)
 
     if value is None or not value.strip():
-        raise RuntimeError(
-            f"{name} is missing or empty in the .env file."
-        )
+        raise RuntimeError(f"{name} is missing or empty in the .env file.")
 
     return value.strip()
 
@@ -71,9 +69,7 @@ def get_postgres_port() -> int:
         return int(raw_port)
 
     except ValueError as error:
-        raise RuntimeError(
-            "POSTGRES_PORT must contain a valid integer."
-        ) from error
+        raise RuntimeError("POSTGRES_PORT must contain a valid integer.") from error
 
 
 host: str = get_optional_env(
@@ -88,13 +84,9 @@ user: str = get_optional_env(
     "postgres",
 )
 
-password: str = get_required_env(
-    "POSTGRES_PASSWORD"
-)
+password: str = get_required_env("POSTGRES_PASSWORD")
 
-configured_database: str = get_required_env(
-    "POSTGRES_DB"
-)
+configured_database: str = get_required_env("POSTGRES_DB")
 
 configured_schema: str = get_optional_env(
     "POSTGRES_SCHEMA",
@@ -124,7 +116,6 @@ with psycopg.connect(
     password=password,
     dbname="postgres",
 ) as connection:
-
     server_cursor = connection.execute(
         """
         SELECT
@@ -140,9 +131,7 @@ with psycopg.connect(
     server_row = server_cursor.fetchone()
 
     if server_row is None:
-        raise RuntimeError(
-            "PostgreSQL returned no server information."
-        )
+        raise RuntimeError("PostgreSQL returned no server information.")
 
     connected_database = cast(str, server_row[0])
     connected_user = cast(str, server_row[1])
@@ -188,7 +177,9 @@ for database_row in database_rows:
 
 
 if configured_database not in database_names:
-    print("\nERROR: Python is connected to a PostgreSQL instance that does not contain the configured database.")
+    print(
+        "\nERROR: Python is connected to a PostgreSQL instance that does not contain the configured database."
+    )
     print(f"Missing database: {configured_database!r}")
     raise SystemExit(1)
 
@@ -208,7 +199,6 @@ with psycopg.connect(
     dbname=configured_database,
     options=f"-c search_path={configured_schema},public",
 ) as connection:
-
     database_info_cursor = connection.execute(
         """
         SELECT
@@ -220,9 +210,7 @@ with psycopg.connect(
     database_info_row = database_info_cursor.fetchone()
 
     if database_info_row is None:
-        raise RuntimeError(
-            "PostgreSQL returned no database information."
-        )
+        raise RuntimeError("PostgreSQL returned no database information.")
 
     current_database = cast(str, database_info_row[0])
     current_schema = cast(str, database_info_row[1])
@@ -239,14 +227,9 @@ with psycopg.connect(
     )
 
     table_rows = table_cursor.fetchall()
-    table_names = {
-        str(table_row[0])
-        for table_row in table_rows
-    }
+    table_names = {str(table_row[0]) for table_row in table_rows}
     table_count = len(table_names)
-    missing_required_tables = sorted(
-        set(REQUIRED_TABLES) - table_names
-    )
+    missing_required_tables = sorted(set(REQUIRED_TABLES) - table_names)
 
 
 print("\nMissionGuard connection result:")
@@ -262,7 +245,4 @@ if missing_required_tables:
     )
     raise SystemExit(1)
 
-print(
-    "Connection successful. Verified all "
-    f"{len(REQUIRED_TABLES)} required MissionGuard tables."
-)
+print(f"Connection successful. Verified all {len(REQUIRED_TABLES)} required MissionGuard tables.")

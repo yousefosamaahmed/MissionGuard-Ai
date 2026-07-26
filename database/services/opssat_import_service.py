@@ -50,10 +50,7 @@ METADATA_COLUMNS: tuple[str, ...] = (
 )
 
 
-REQUIRED_COLUMNS: set[str] = (
-    set(FEATURE_COLUMNS)
-    | set(METADATA_COLUMNS)
-)
+REQUIRED_COLUMNS: set[str] = set(FEATURE_COLUMNS) | set(METADATA_COLUMNS)
 
 
 @dataclass(frozen=True)
@@ -122,24 +119,14 @@ def _validate_dataframe(
     """
 
     if dataframe.empty:
-        raise ValueError(
-            "The OPS-SAT CSV file contains no rows."
-        )
+        raise ValueError("The OPS-SAT CSV file contains no rows.")
 
-    missing_columns = (
-        REQUIRED_COLUMNS
-        - set(dataframe.columns)
-    )
+    missing_columns = REQUIRED_COLUMNS - set(dataframe.columns)
 
     if missing_columns:
-        missing_list = ", ".join(
-            sorted(missing_columns)
-        )
+        missing_list = ", ".join(sorted(missing_columns))
 
-        raise ValueError(
-            "The OPS-SAT CSV file is missing "
-            f"required columns: {missing_list}"
-        )
+        raise ValueError(f"The OPS-SAT CSV file is missing required columns: {missing_list}")
 
     anomaly_values = pd.to_numeric(
         dataframe["anomaly"],
@@ -147,28 +134,17 @@ def _validate_dataframe(
     )
 
     if anomaly_values.isna().any():
-        raise ValueError(
-            "The anomaly column contains invalid "
-            "or missing values."
-        )
+        raise ValueError("The anomaly column contains invalid or missing values.")
 
-    unique_labels = set(
-        float(value)
-        for value in anomaly_values.unique()
-    )
+    unique_labels = set(float(value) for value in anomaly_values.unique())
 
     valid_labels = {
         0.0,
         1.0,
     }
 
-    if not unique_labels.issubset(
-        valid_labels
-    ):
-        raise ValueError(
-            "The anomaly column must contain "
-            "only 0 or 1."
-        )
+    if not unique_labels.issubset(valid_labels):
+        raise ValueError("The anomaly column must contain only 0 or 1.")
 
 
 def _build_telemetry_records(
@@ -182,72 +158,40 @@ def _build_telemetry_records(
 
     records: list[dict[str, Any]] = []
 
-    row_records = dataframe.to_dict(
-        orient="records"
-    )
+    row_records = dataframe.to_dict(orient="records")
 
-    for sample_index, row in enumerate(
-        row_records
-    ):
-        segment_value = _to_python_value(
-            row["segment"]
-        )
+    for sample_index, row in enumerate(row_records):
+        segment_value = _to_python_value(row["segment"])
 
-        channel_value = str(
-            row["channel"]
-        ).strip()
+        channel_value = str(row["channel"]).strip()
 
-        train_value = _to_python_value(
-            row["train"]
-        )
+        train_value = _to_python_value(row["train"])
 
-        anomaly_value = float(
-            row["anomaly"]
-        )
+        anomaly_value = float(row["anomaly"])
 
-        is_anomaly = (
-            anomaly_value == 1.0
-        )
+        is_anomaly = anomaly_value == 1.0
 
         feature_values = {
-            column_name: _to_python_value(
-                row[column_name]
-            )
-            for column_name in FEATURE_COLUMNS
+            column_name: _to_python_value(row[column_name]) for column_name in FEATURE_COLUMNS
         }
 
         records.append(
             {
                 "sample_index": sample_index,
                 "timestamp": None,
-                "segment_identifier": (
-                    f"{channel_value}:"
-                    f"{segment_value}"
-                ),
+                "segment_identifier": (f"{channel_value}:{segment_value}"),
                 "split_type": "validation",
-                "ground_truth_label": (
-                    is_anomaly
-                ),
-                "anomaly_type": (
-                    "opssat_segment_anomaly"
-                    if is_anomaly
-                    else None
-                ),
+                "ground_truth_label": (is_anomaly),
+                "anomaly_type": ("opssat_segment_anomaly" if is_anomaly else None),
                 "sample_metadata": {
                     "segment": segment_value,
                     "channel": channel_value,
                     "train_flag": train_value,
-                    "source_file": (
-                        source_file_name
-                    ),
-                    "record_level": (
-                        "segment_features"
-                    ),
+                    "source_file": (source_file_name),
+                    "record_level": ("segment_features"),
                     "timestamp_available": False,
                 },
-                "feature_values": (
-                    feature_values
-                ),
+                "feature_values": (feature_values),
             }
         )
 
@@ -261,39 +205,23 @@ def _build_quality_report(
     Build a quality report from the imported feature file.
     """
 
-    missing_counts = (
-        dataframe
-        .isna()
-        .sum()
-    )
+    missing_counts = dataframe.isna().sum()
 
     missing_value_summary = {
         str(column_name): int(count)
-        for column_name, count
-        in missing_counts.items()
+        for column_name, count in missing_counts.items()
         if int(count) > 0
     }
 
-    duplicate_rows = int(
-        dataframe.duplicated().sum()
-    )
+    duplicate_rows = int(dataframe.duplicated().sum())
 
     constant_features = [
         column_name
         for column_name in FEATURE_COLUMNS
-        if dataframe[
-            column_name
-        ].nunique(
-            dropna=False
-        ) <= 1
+        if dataframe[column_name].nunique(dropna=False) <= 1
     ]
 
-    sampling_values = sorted(
-        int(value)
-        for value in dataframe[
-            "sampling"
-        ].dropna().unique()
-    )
+    sampling_values = sorted(int(value) for value in dataframe["sampling"].dropna().unique())
 
     validation_messages: list[str] = [
         (
@@ -301,36 +229,23 @@ def _build_quality_report(
             "features rather than timestamp-level "
             "raw telemetry."
         ),
-        (
-            "No timestamp column is available, so "
-            "telemetry sample timestamps were stored "
-            "as NULL."
-        ),
+        ("No timestamp column is available, so telemetry sample timestamps were stored as NULL."),
     ]
 
     if duplicate_rows > 0:
-        validation_messages.append(
-            f"{duplicate_rows} duplicate rows "
-            "were detected."
-        )
+        validation_messages.append(f"{duplicate_rows} duplicate rows were detected.")
 
     if missing_value_summary:
-        validation_messages.append(
-            "Missing feature values were detected."
-        )
+        validation_messages.append("Missing feature values were detected.")
 
     if constant_features:
         validation_messages.append(
-            "Constant feature columns were detected: "
-            + ", ".join(constant_features)
+            "Constant feature columns were detected: " + ", ".join(constant_features)
         )
 
     overall_status = "valid"
 
-    if (
-        duplicate_rows > 0
-        or missing_value_summary
-    ):
+    if duplicate_rows > 0 or missing_value_summary:
         overall_status = "warning"
 
     return {
@@ -338,37 +253,23 @@ def _build_quality_report(
         "invalid_timestamps": 0,
         "duplicate_timestamps": 0,
         "long_missing_gaps": 0,
-        "constant_sensors": (
-            constant_features
-        ),
+        "constant_sensors": (constant_features),
         "out_of_domain_values": {},
-        "missing_value_summary": (
-            missing_value_summary
-        ),
+        "missing_value_summary": (missing_value_summary),
         "sampling_report": {
             "timestamp_available": False,
-            "sampling_values": (
-                sampling_values
-            ),
-            "record_level": (
-                "segment_features"
-            ),
+            "sampling_values": (sampling_values),
+            "record_level": ("segment_features"),
         },
-        "validation_messages": (
-            validation_messages
-        ),
-        "overall_status": (
-            overall_status
-        ),
+        "validation_messages": (validation_messages),
+        "overall_status": (overall_status),
     }
 
 
 def import_opssat_feature_csv(
     mission_id: UUID,
     csv_file_path: Path,
-    dataset_name: str = (
-        "OPS-SAT Validation Features"
-    ),
+    dataset_name: str = ("OPS-SAT Validation Features"),
     dataset_code: str | None = None,
 ) -> OpsSatImportResult:
     """
@@ -384,74 +285,46 @@ def import_opssat_feature_csv(
     6. Data-quality report
     """
 
-    file_path = (
-        csv_file_path
-        .expanduser()
-        .resolve()
-    )
+    file_path = csv_file_path.expanduser().resolve()
 
     if not file_path.exists():
-        raise FileNotFoundError(
-            f"OPS-SAT CSV file not found: {file_path}"
-        )
+        raise FileNotFoundError(f"OPS-SAT CSV file not found: {file_path}")
 
     if file_path.suffix.lower() != ".csv":
-        raise ValueError(
-            "The OPS-SAT input file must be CSV."
-        )
+        raise ValueError("The OPS-SAT input file must be CSV.")
 
     dataframe = pd.read_csv(
         file_path,
         low_memory=False,
     )
 
-    _validate_dataframe(
-        dataframe
-    )
+    _validate_dataframe(dataframe)
 
-    generated_code = (
-        dataset_code
-        or (
-            "OPS-VAL-"
-            + uuid4().hex[:8].upper()
-        )
-    )
+    generated_code = dataset_code or ("OPS-VAL-" + uuid4().hex[:8].upper())
 
-    row_count = len(
-        dataframe
-    )
+    row_count = len(dataframe)
 
-    feature_count = len(
-        FEATURE_COLUMNS
-    )
+    feature_count = len(FEATURE_COLUMNS)
 
     dataset_id = create_dataset(
         name=dataset_name,
         dataset_code=generated_code,
         source_type="opssat",
-        source_organization=(
-            "European Space Agency"
-        ),
+        source_organization=("European Space Agency"),
         description=(
-            "Processed OPS-SAT segment-level "
-            "validation features imported into "
-            "MissionGuard AI."
+            "Processed OPS-SAT segment-level validation features imported into MissionGuard AI."
         ),
         version="1.0",
         row_count=row_count,
         feature_count=feature_count,
         is_labeled=True,
         metadata={
-            "record_level": (
-                "segment_features"
-            ),
+            "record_level": ("segment_features"),
             "timestamp_available": False,
             "label_column": "anomaly",
             "channel_column": "channel",
             "segment_column": "segment",
-            "feature_columns": list(
-                FEATURE_COLUMNS
-            ),
+            "feature_columns": list(FEATURE_COLUMNS),
         },
     )
 
@@ -461,43 +334,29 @@ def import_opssat_feature_csv(
         file_role="processed",
         file_path=str(file_path),
         storage_provider="local",
-        file_size_bytes=(
-            file_path.stat().st_size
-        ),
+        file_size_bytes=(file_path.stat().st_size),
         mime_type="text/csv",
-        sha256_hash=_calculate_sha256(
-            file_path
-        ),
+        sha256_hash=_calculate_sha256(file_path),
         row_count=row_count,
         metadata={
             "dataset_family": "opssat",
-            "record_level": (
-                "segment_features"
-            ),
+            "record_level": ("segment_features"),
         },
     )
 
-    telemetry_session_id = (
-        create_telemetry_session(
-            session_name=(
-                "OPS-SAT Validation Feature Import"
-            ),
-            source_type="opssat",
-            mission_id=mission_id,
-            dataset_id=dataset_id,
-            source_file_name=(
-                file_path.name
-            ),
-            sampling_interval_seconds=None,
-            total_samples=row_count,
-            validation_status="valid",
-            metadata={
-                "record_level": (
-                    "segment_features"
-                ),
-                "timestamp_available": False,
-            },
-        )
+    telemetry_session_id = create_telemetry_session(
+        session_name=("OPS-SAT Validation Feature Import"),
+        source_type="opssat",
+        mission_id=mission_id,
+        dataset_id=dataset_id,
+        source_file_name=(file_path.name),
+        sampling_interval_seconds=None,
+        total_samples=row_count,
+        validation_status="valid",
+        metadata={
+            "record_level": ("segment_features"),
+            "timestamp_available": False,
+        },
     )
 
     records = _build_telemetry_records(
@@ -505,16 +364,12 @@ def import_opssat_feature_csv(
         source_file_name=file_path.name,
     )
 
-    quality_report = _build_quality_report(
-        dataframe
-    )
+    quality_report = _build_quality_report(dataframe)
 
     save_result = save_telemetry_batch(
         session_id=telemetry_session_id,
         records=records,
-        feature_schema_name=(
-            "opssat_segment_features"
-        ),
+        feature_schema_name=("opssat_segment_features"),
         feature_schema_version="1.0",
         quality_report=quality_report,
     )
@@ -523,20 +378,10 @@ def import_opssat_feature_csv(
         mission_id=mission_id,
         dataset_id=dataset_id,
         dataset_file_id=dataset_file_id,
-        telemetry_session_id=(
-            telemetry_session_id
-        ),
-        quality_report_id=(
-            save_result.quality_report_id
-        ),
+        telemetry_session_id=(telemetry_session_id),
+        quality_report_id=(save_result.quality_report_id),
         row_count=row_count,
         feature_count=feature_count,
-        stored_samples=(
-            save_result.inserted_samples
-        ),
-        stored_feature_vectors=(
-            save_result
-            .inserted_feature_vectors
-            
-        ),
+        stored_samples=(save_result.inserted_samples),
+        stored_feature_vectors=(save_result.inserted_feature_vectors),
     )

@@ -42,11 +42,7 @@ def _validate_probability(
         return
 
     if not minimum <= value <= maximum:
-        raise ValueError(
-            f"{name} must be between "
-            f"{minimum} and {maximum}. "
-            f"Received: {value}"
-        )
+        raise ValueError(f"{name} must be between {minimum} and {maximum}. Received: {value}")
 
 
 def save_model_metric(
@@ -89,10 +85,7 @@ def save_model_metric(
     """
 
     if evaluation_type not in VALID_EVALUATION_TYPES:
-        raise ValueError(
-            "Invalid evaluation type: "
-            f"{evaluation_type}"
-        )
+        raise ValueError(f"Invalid evaluation type: {evaluation_type}")
 
     score_values = {
         "precision_score": precision_score,
@@ -121,55 +114,29 @@ def save_model_metric(
     )
 
     non_negative_values = {
-        "false_alarms_per_1000": (
-            false_alarms_per_1000
-        ),
-        "mean_detection_delay": (
-            mean_detection_delay
-        ),
-        "median_detection_delay": (
-            median_detection_delay
-        ),
+        "false_alarms_per_1000": (false_alarms_per_1000),
+        "mean_detection_delay": (mean_detection_delay),
+        "median_detection_delay": (median_detection_delay),
     }
 
-    for value_name, numeric_value in (
-        non_negative_values.items()
-    ):
-        if (
-            numeric_value is not None
-            and numeric_value < 0
-        ):
-            raise ValueError(
-                f"{value_name} cannot be negative."
-            )
+    for value_name, numeric_value in non_negative_values.items():
+        if numeric_value is not None and numeric_value < 0:
+            raise ValueError(f"{value_name} cannot be negative.")
 
     count_values = {
         "detected_events": detected_events,
         "missed_events": missed_events,
-        "false_event_alerts": (
-            false_event_alerts
-        ),
+        "false_event_alerts": (false_event_alerts),
         "duplicate_alerts": duplicate_alerts,
     }
 
     for count_name, count_value in count_values.items():
-        if (
-            count_value is not None
-            and count_value < 0
-        ):
-            raise ValueError(
-                f"{count_name} cannot be negative."
-            )
+        if count_value is not None and count_value < 0:
+            raise ValueError(f"{count_name} cannot be negative.")
 
-    model_metrics = get_table(
-        "model_metrics"
-    )
+    model_metrics = get_table("model_metrics")
 
-    clean_split_name = (
-        split_name.strip()
-        if split_name
-        else None
-    )
+    clean_split_name = split_name.strip() if split_name else None
 
     metric_values: dict[str, Any] = {
         "model_version_id": model_version_id,
@@ -184,101 +151,55 @@ def save_model_metric(
         "roc_auc": roc_auc,
         "pr_auc": pr_auc,
         "false_alarm_rate": false_alarm_rate,
-        "false_alarms_per_1000": (
-            false_alarms_per_1000
-        ),
-        "mean_detection_delay": (
-            mean_detection_delay
-        ),
-        "median_detection_delay": (
-            median_detection_delay
-        ),
+        "false_alarms_per_1000": (false_alarms_per_1000),
+        "mean_detection_delay": (mean_detection_delay),
+        "median_detection_delay": (median_detection_delay),
         "event_precision": event_precision,
         "event_recall": event_recall,
         "event_f1": event_f1,
         "detected_events": detected_events,
         "missed_events": missed_events,
-        "false_event_alerts": (
-            false_event_alerts
-        ),
+        "false_event_alerts": (false_event_alerts),
         "duplicate_alerts": duplicate_alerts,
-        "confusion_matrix": (
-            confusion_matrix or {}
-        ),
+        "confusion_matrix": (confusion_matrix or {}),
         "extra_metrics": extra_metrics or {},
     }
 
     find_statement = (
         select(model_metrics.c.id)
-        .where(
-            model_metrics.c.model_version_id
-            == model_version_id
-        )
-        .where(
-            model_metrics.c.evaluation_type
-            == evaluation_type
-        )
+        .where(model_metrics.c.model_version_id == model_version_id)
+        .where(model_metrics.c.evaluation_type == evaluation_type)
     )
 
     if dataset_id is None:
-        find_statement = find_statement.where(
-            model_metrics.c.dataset_id.is_(None)
-        )
+        find_statement = find_statement.where(model_metrics.c.dataset_id.is_(None))
 
     else:
-        find_statement = find_statement.where(
-            model_metrics.c.dataset_id
-            == dataset_id
-        )
+        find_statement = find_statement.where(model_metrics.c.dataset_id == dataset_id)
 
     if clean_split_name is None:
-        find_statement = find_statement.where(
-            model_metrics.c.split_name.is_(None)
-        )
+        find_statement = find_statement.where(model_metrics.c.split_name.is_(None))
 
     else:
-        find_statement = find_statement.where(
-            model_metrics.c.split_name
-            == clean_split_name
-        )
+        find_statement = find_statement.where(model_metrics.c.split_name == clean_split_name)
 
     with database_session() as session:
-        existing_metric_id = (
-            session.execute(
-                find_statement
-            )
-            .scalar_one_or_none()
-        )
+        existing_metric_id = session.execute(find_statement).scalar_one_or_none()
 
         if existing_metric_id is None:
-            statement = (
-                insert(model_metrics)
-                .values(**metric_values)
-                .returning(
-                    model_metrics.c.id
-                )
-            )
+            statement = insert(model_metrics).values(**metric_values).returning(model_metrics.c.id)
 
         else:
             statement = (
                 update(model_metrics)
-                .where(
-                    model_metrics.c.id
-                    == existing_metric_id
-                )
+                .where(model_metrics.c.id == existing_metric_id)
                 .values(**metric_values)
-                .returning(
-                    model_metrics.c.id
-                )
+                .returning(model_metrics.c.id)
             )
 
-        metric_id = session.execute(
-            statement
-        ).scalar_one()
+        metric_id = session.execute(statement).scalar_one()
 
-    return _to_uuid(
-        metric_id
-    )
+    return _to_uuid(metric_id)
 
 
 def list_model_metrics(
@@ -289,41 +210,19 @@ def list_model_metrics(
     Return stored model metrics with optional filters.
     """
 
-    model_metrics = get_table(
-        "model_metrics"
-    )
+    model_metrics = get_table("model_metrics")
 
-    statement = select(
-        model_metrics
-    )
+    statement = select(model_metrics)
 
     if model_version_id is not None:
-        statement = statement.where(
-            model_metrics.c.model_version_id
-            == model_version_id
-        )
+        statement = statement.where(model_metrics.c.model_version_id == model_version_id)
 
     if dataset_id is not None:
-        statement = statement.where(
-            model_metrics.c.dataset_id
-            == dataset_id
-        )
+        statement = statement.where(model_metrics.c.dataset_id == dataset_id)
 
-    statement = statement.order_by(
-        model_metrics
-        .c
-        .evaluated_at
-        .desc()
-    )
+    statement = statement.order_by(model_metrics.c.evaluated_at.desc())
 
     with database_session() as session:
-        rows = (
-            session.execute(statement)
-            .mappings()
-            .all()
-        )
+        rows = session.execute(statement).mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]

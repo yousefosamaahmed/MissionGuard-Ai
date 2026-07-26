@@ -23,9 +23,7 @@ def create_mission(
     clean_name = name.strip()
 
     if not clean_name:
-        raise ValueError(
-            "Mission name cannot be empty."
-        )
+        raise ValueError("Mission name cannot be empty.")
 
     valid_statuses = {
         "planned",
@@ -36,13 +34,9 @@ def create_mission(
     }
 
     if status not in valid_statuses:
-        raise ValueError(
-            f"Invalid mission status: {status}"
-        )
+        raise ValueError(f"Invalid mission status: {status}")
 
-    missions_table = get_table(
-        "missions"
-    )
+    missions_table = get_table("missions")
 
     statement = (
         insert(missions_table)
@@ -53,19 +47,13 @@ def create_mission(
             description=description,
             status=status,
         )
-        .returning(
-            missions_table.c.id
-        )
+        .returning(missions_table.c.id)
     )
 
     with database_session() as session:
-        result = session.execute(
-            statement
-        )
+        result = session.execute(statement)
 
-        mission_id_value = (
-            result.scalar_one()
-        )
+        mission_id_value = result.scalar_one()
 
     if isinstance(
         mission_id_value,
@@ -73,9 +61,7 @@ def create_mission(
     ):
         return mission_id_value
 
-    return UUID(
-        str(mission_id_value)
-    )
+    return UUID(str(mission_id_value))
 
 
 def list_missions() -> list[dict[str, Any]]:
@@ -83,35 +69,16 @@ def list_missions() -> list[dict[str, Any]]:
     Return all stored missions ordered from newest to oldest.
     """
 
-    missions_table = get_table(
-        "missions"
-    )
+    missions_table = get_table("missions")
 
-    statement = (
-        select(missions_table)
-        .order_by(
-            missions_table
-            .c
-            .created_at
-            .desc()
-        )
-    )
+    statement = select(missions_table).order_by(missions_table.c.created_at.desc())
 
     with database_session() as session:
-        result = session.execute(
-            statement
-        )
+        result = session.execute(statement)
 
-        rows = (
-            result
-            .mappings()
-            .all()
-        )
+        rows = result.mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]
 
 
 def get_mission(
@@ -121,28 +88,14 @@ def get_mission(
     Return one mission by its UUID.
     """
 
-    missions_table = get_table(
-        "missions"
-    )
+    missions_table = get_table("missions")
 
-    statement = (
-        select(missions_table)
-        .where(
-            missions_table.c.id
-            == mission_id
-        )
-    )
+    statement = select(missions_table).where(missions_table.c.id == mission_id)
 
     with database_session() as session:
-        result = session.execute(
-            statement
-        )
+        result = session.execute(statement)
 
-        row = (
-            result
-            .mappings()
-            .one_or_none()
-        )
+        row = result.mappings().one_or_none()
 
     if row is None:
         return None

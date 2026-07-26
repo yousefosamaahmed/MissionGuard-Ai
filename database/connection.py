@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import Any, Generator
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine, URL
+from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from database.config import (
@@ -119,35 +119,31 @@ def check_database_connection() -> dict[str, Any]:
     active_engine, _ = _require_database()
 
     with active_engine.connect() as connection:
-        database_name = connection.execute(
-            text("SELECT current_database()")
-        ).scalar_one()
+        database_name = connection.execute(text("SELECT current_database()")).scalar_one()
 
-        current_schema = connection.execute(
-            text("SELECT current_schema()")
-        ).scalar_one()
+        current_schema = connection.execute(text("SELECT current_schema()")).scalar_one()
 
-        postgres_version = connection.execute(
-            text("SELECT version()")
-        ).scalar_one()
+        postgres_version = connection.execute(text("SELECT version()")).scalar_one()
 
-        table_rows = connection.execute(
-            text(
-                """
+        table_rows = (
+            connection.execute(
+                text(
+                    """
                 SELECT table_name
                 FROM information_schema.tables
                 WHERE table_schema = :schema_name
                   AND table_type = 'BASE TABLE'
                 ORDER BY table_name
                 """
-            ),
-            {"schema_name": POSTGRES_SCHEMA},
-        ).scalars().all()
+                ),
+                {"schema_name": POSTGRES_SCHEMA},
+            )
+            .scalars()
+            .all()
+        )
 
     table_names = [str(table_name) for table_name in table_rows]
-    missing_required_tables = sorted(
-        set(REQUIRED_TABLES) - set(table_names)
-    )
+    missing_required_tables = sorted(set(REQUIRED_TABLES) - set(table_names))
 
     return {
         "database_name": database_name,

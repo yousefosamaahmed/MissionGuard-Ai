@@ -71,38 +71,24 @@ def create_dataset(
     clean_name = name.strip()
 
     if not clean_name:
-        raise ValueError(
-            "Dataset name cannot be empty."
-        )
+        raise ValueError("Dataset name cannot be empty.")
 
     if source_type not in VALID_DATASET_SOURCE_TYPES:
-        raise ValueError(
-            f"Invalid dataset source type: {source_type}"
-        )
+        raise ValueError(f"Invalid dataset source type: {source_type}")
 
     if row_count < 0:
-        raise ValueError(
-            "Dataset row_count cannot be negative."
-        )
+        raise ValueError("Dataset row_count cannot be negative.")
 
     if feature_count < 0:
-        raise ValueError(
-            "Dataset feature_count cannot be negative."
-        )
+        raise ValueError("Dataset feature_count cannot be negative.")
 
-    datasets_table = get_table(
-        "datasets"
-    )
+    datasets_table = get_table("datasets")
 
     statement = (
         insert(datasets_table)
         .values(
             name=clean_name,
-            dataset_code=(
-                dataset_code.strip()
-                if dataset_code
-                else None
-            ),
+            dataset_code=(dataset_code.strip() if dataset_code else None),
             source_type=source_type,
             source_organization=source_organization,
             source_url=source_url,
@@ -114,15 +100,11 @@ def create_dataset(
             is_labeled=is_labeled,
             metadata=metadata or {},
         )
-        .returning(
-            datasets_table.c.id
-        )
+        .returning(datasets_table.c.id)
     )
 
     with database_session() as session:
-        dataset_id = session.execute(
-            statement
-        ).scalar_one()
+        dataset_id = session.execute(statement).scalar_one()
 
     return _to_uuid(dataset_id)
 
@@ -134,24 +116,12 @@ def get_dataset(
     Return one dataset by ID.
     """
 
-    datasets_table = get_table(
-        "datasets"
-    )
+    datasets_table = get_table("datasets")
 
-    statement = (
-        select(datasets_table)
-        .where(
-            datasets_table.c.id
-            == dataset_id
-        )
-    )
+    statement = select(datasets_table).where(datasets_table.c.id == dataset_id)
 
     with database_session() as session:
-        row = (
-            session.execute(statement)
-            .mappings()
-            .one_or_none()
-        )
+        row = session.execute(statement).mappings().one_or_none()
 
     if row is None:
         return None
@@ -164,31 +134,14 @@ def list_datasets() -> list[dict[str, Any]]:
     Return all datasets from newest to oldest.
     """
 
-    datasets_table = get_table(
-        "datasets"
-    )
+    datasets_table = get_table("datasets")
 
-    statement = (
-        select(datasets_table)
-        .order_by(
-            datasets_table
-            .c
-            .created_at
-            .desc()
-        )
-    )
+    statement = select(datasets_table).order_by(datasets_table.c.created_at.desc())
 
     with database_session() as session:
-        rows = (
-            session.execute(statement)
-            .mappings()
-            .all()
-        )
+        rows = session.execute(statement).mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]
 
 
 def create_dataset_file(
@@ -214,45 +167,24 @@ def create_dataset_file(
     clean_file_path = file_path.strip()
 
     if not clean_file_name:
-        raise ValueError(
-            "Dataset file name cannot be empty."
-        )
+        raise ValueError("Dataset file name cannot be empty.")
 
     if not clean_file_path:
-        raise ValueError(
-            "Dataset file path cannot be empty."
-        )
+        raise ValueError("Dataset file path cannot be empty.")
 
     if file_role not in VALID_FILE_ROLES:
-        raise ValueError(
-            f"Invalid dataset file role: {file_role}"
-        )
+        raise ValueError(f"Invalid dataset file role: {file_role}")
 
     if storage_provider not in VALID_STORAGE_PROVIDERS:
-        raise ValueError(
-            "Invalid storage provider: "
-            f"{storage_provider}"
-        )
+        raise ValueError(f"Invalid storage provider: {storage_provider}")
 
-    if (
-        file_size_bytes is not None
-        and file_size_bytes < 0
-    ):
-        raise ValueError(
-            "File size cannot be negative."
-        )
+    if file_size_bytes is not None and file_size_bytes < 0:
+        raise ValueError("File size cannot be negative.")
 
-    if (
-        row_count is not None
-        and row_count < 0
-    ):
-        raise ValueError(
-            "File row count cannot be negative."
-        )
+    if row_count is not None and row_count < 0:
+        raise ValueError("File row count cannot be negative.")
 
-    dataset_files_table = get_table(
-        "dataset_files"
-    )
+    dataset_files_table = get_table("dataset_files")
 
     statement = (
         insert(dataset_files_table)
@@ -268,15 +200,11 @@ def create_dataset_file(
             row_count=row_count,
             metadata=metadata or {},
         )
-        .returning(
-            dataset_files_table.c.id
-        )
+        .returning(dataset_files_table.c.id)
     )
 
     with database_session() as session:
-        dataset_file_id = session.execute(
-            statement
-        ).scalar_one()
+        dataset_file_id = session.execute(statement).scalar_one()
 
     return _to_uuid(dataset_file_id)
 
@@ -288,32 +216,15 @@ def list_dataset_files(
     Return all files registered for a dataset.
     """
 
-    dataset_files_table = get_table(
-        "dataset_files"
-    )
+    dataset_files_table = get_table("dataset_files")
 
     statement = (
         select(dataset_files_table)
-        .where(
-            dataset_files_table.c.dataset_id
-            == dataset_id
-        )
-        .order_by(
-            dataset_files_table
-            .c
-            .created_at
-            .asc()
-        )
+        .where(dataset_files_table.c.dataset_id == dataset_id)
+        .order_by(dataset_files_table.c.created_at.asc())
     )
 
     with database_session() as session:
-        rows = (
-            session.execute(statement)
-            .mappings()
-            .all()
-        )
+        rows = session.execute(statement).mappings().all()
 
-    return [
-        dict(row)
-        for row in rows
-    ]
+    return [dict(row) for row in rows]

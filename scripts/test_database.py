@@ -22,27 +22,16 @@ def main() -> None:
 
         print(f"Database: {info['database_name']}")
         print(f"Current schema: {info['schema_name']}")
-        print(
-            f"Configured schema: "
-            f"{info['configured_schema']}"
-        )
+        print(f"Configured schema: {info['configured_schema']}")
         print(f"Tables found: {info['table_count']}")
         print("Connection successful.")
 
-        missing_tables = info[
-            "missing_required_tables"
-        ]
+        missing_tables = info["missing_required_tables"]
 
         if missing_tables:
-            raise RuntimeError(
-                "Missing required tables: "
-                + ", ".join(missing_tables)
-            )
+            raise RuntimeError("Missing required tables: " + ", ".join(missing_tables))
 
-        print(
-            "Required MissionGuard tables verified: "
-            f"{info['required_table_count']}"
-        )
+        print(f"Required MissionGuard tables verified: {info['required_table_count']}")
 
     except Exception as error:
         print("Database connection failed.")
