@@ -8,6 +8,47 @@ MissionGuard AI is an explainable spacecraft-telemetry decision-support applicat
 
 ---
 
+## Problem Statement
+
+Spacecraft generate large volumes of telemetry across multiple channels. Manually reviewing these signals is time-consuming, difficult to scale, and vulnerable to subtle abnormal patterns being missed before they develop into mission-critical incidents.
+
+Many anomaly-detection systems also stop at producing isolated alerts. They may not explain why an alert was raised, whether the incoming data still resembles the model's training conditions, or whether several alerts belong to the same operational incident. This creates alert fatigue and makes it harder for mission operators to distinguish actionable evidence from noise.
+
+Mission operators therefore need a reliable decision-support platform that can detect unusual telemetry behavior, explain the evidence behind each alert, group related anomalies, monitor data quality and drift, and preserve human oversight.
+
+---
+
+## Solution Overview
+
+MissionGuard AI transforms real ESA OPS-SAT telemetry into explainable, operator-ready mission intelligence.
+
+The platform:
+
+- validates incoming telemetry before analysis;
+- converts raw telemetry into meaningful segment-level statistical features;
+- detects unusual behavior through a hybrid anomaly-detection model;
+- produces anomaly and mission-risk scores;
+- explains the strongest evidence behind each decision;
+- groups temporally related alerts into incidents;
+- evaluates labeled uploads using segment-level and event-level metrics;
+- monitors data compatibility and distribution drift;
+- persists operational records and audit evidence in PostgreSQL;
+- supports human-in-the-loop review;
+- generates exportable technical reports and analyzed CSV files.
+
+MissionGuard AI does **not** autonomously control spacecraft or execute mission commands. It is designed as a decision-support platform that provides structured evidence while keeping mission operators responsible for final decisions.
+
+---
+
+## Selected Challenge
+
+MissionGuard AI was developed for the **AI Builders Challenge with IBM Bob** within the **Space Intelligence / spacecraft telemetry monitoring** problem area.
+
+The selected challenge focuses on using AI to improve how spacecraft telemetry is monitored, interpreted, and reviewed. MissionGuard AI addresses this by converting real mission telemetry into explainable anomaly alerts, grouped incidents, drift awareness, and operator-ready evidence while maintaining responsible-AI principles and human oversight.
+
+
+---
+
 ## Live Demo
 
 MissionGuard AI is currently deployed and available at:
@@ -23,6 +64,32 @@ The Streamlit application, PostgreSQL, and pgAdmin ports are bound to localhost 
 ## Challenge UI/UX
 
 The application now opens on a cinematic **Launchpad** that introduces MissionGuard AI before the user enters mission control. Every major capability has its own numbered workspace, and the new **Team & Contact** page presents the builders and their roles professionally. The interface remains responsive and supports both Dark and Light appearance modes.
+
+---
+
+## How IBM Bob Was Used
+
+IBM Bob was used as the AI-assisted development environment throughout the MissionGuard AI lifecycle.
+
+It supported the team in:
+
+- planning the repository structure and implementation roadmap;
+- generating and refining Python modules;
+- improving Streamlit interface components and navigation;
+- developing telemetry-validation and feature-engineering logic;
+- integrating Isolation Forest and supervised Random Forest models;
+- implementing the hybrid scoring workflow;
+- building PostgreSQL persistence and database-initialization flows;
+- creating Docker and deployment configurations;
+- generating, reviewing, and improving automated tests;
+- identifying code-quality issues and resolving Ruff linting errors;
+- reviewing technical documentation and deployment procedures;
+- maintaining development evidence for the challenge submission.
+
+IBM Bob accelerated implementation and iteration, but it did not replace engineering judgment. AI-assisted code and recommendations were reviewed, tested, and validated before inclusion. Final decisions concerning architecture, data integrity, model evaluation, security, responsible-AI limitations, and production deployment remained under human control.
+
+Detailed development evidence is available in the application's **IBM Bob Evidence** workspace and the associated repository documentation.
+
 
 ## Dataset
 
@@ -43,6 +110,80 @@ The full data card is available at:
 ```text
 data/DATASET_CARD.md
 ```
+
+---
+
+
+
+---
+
+## AI Approach and System Architecture
+
+MissionGuard AI uses a layered hybrid architecture that separates data validation, feature engineering, model inference, explainability, drift monitoring, persistence, and operator interaction.
+
+### End-to-end AI approach
+
+1. **Telemetry ingestion and validation**
+   - Accepts official OPS-SAT data or uploaded CSV files.
+   - Checks schema, timestamps, numeric values, duplicates, channel consistency, labels, and sample sufficiency.
+
+2. **Segmentation and feature engineering**
+   - Converts raw signal samples into segment-level statistical representations.
+   - Uses features such as mean, variance, standard deviation, skewness, kurtosis, peak counts, temporal differences, duration, and gap-related measures.
+
+3. **Unsupervised anomaly evidence**
+   - Isolation Forest learns the nominal telemetry envelope using only nominal segments from the official training split.
+
+4. **Supervised anomaly evidence**
+   - Random Forest learns discriminative patterns from labeled normal and anomalous official-training segments.
+
+5. **Hybrid decision layer**
+   - Combines calibrated Isolation Forest evidence with supervised Random Forest evidence.
+   - Applies a threshold selected only from an internal validation subset of the official training partition.
+
+6. **Explainability and incident intelligence**
+   - Presents feature deviations, model scores, decision margin, risk level, and grouped anomaly incidents.
+
+7. **Drift and compatibility monitoring**
+   - Compares incoming feature distributions with the nominal training envelope.
+   - Warns operators when model reliability may have changed.
+
+8. **Persistence and reporting**
+   - Stores operational data, model metadata, reviews, and audit evidence in PostgreSQL.
+   - Produces exportable TXT, HTML, and analyzed CSV reports.
+
+### Architecture overview
+
+```text
+Real OPS-SAT Telemetry / Uploaded CSV
+                  │
+                  ▼
+         Data Validation Layer
+                  │
+                  ▼
+       Segmentation and Features
+                  │
+          ┌───────┴────────┐
+          ▼                ▼
+   Isolation Forest   Random Forest
+          └───────┬────────┘
+                  ▼
+        Hybrid Scoring Engine
+                  │
+        ┌─────────┼──────────┐
+        ▼         ▼          ▼
+ Explainability  Drift    Event Grouping
+        │         │          │
+        └─────────┴──────────┘
+                  ▼
+        Streamlit Operator UI
+                  │
+                  ▼
+       PostgreSQL and Reports
+```
+
+The production system is deployed on AWS Lightsail using Docker Compose, PostgreSQL, pgAdmin, Nginx, HTTPS, and persistent Docker volumes.
+
 
 ---
 
